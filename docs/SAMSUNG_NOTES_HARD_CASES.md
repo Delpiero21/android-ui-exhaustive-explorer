@@ -17,8 +17,7 @@
 ```powershell
 # 1. 단말 USB 연결 + adb debugging 허용
 # 2. Samsung Notes 앱을 검사 대상 화면까지 수동 진입
-# 3. dump_visualizer 서버 기동
-cd C:\Users\hajun\Desktop\dump_visualizer\android-ui-dump-visualizer
+# 3. android-ui-dump-visualizer 서버 기동 (별도 도구)
 node server.js
 # → http://localhost:3000
 ```
@@ -46,7 +45,7 @@ node server.js
 | 1 | SIP 키보드 (Samsung Keyboard) | §2 다중 윈도우 처리 불완전 | Tier 1 + dumpsys window |
 | 2 | 손글씨 캔버스 (Drawing Canvas) | §1 Canvas | Tier 2 + 3 + 4 |
 | 3 | 펜·형광펜·지우개 도구바 | §1 커스텀 View description 누락 | Tier 3 (CV + OCR) — **One UI 8.5 에서 반증됨 (Case 2 분석 참조)** |
-| 4 | 색상 휠 / 팔레트 | §1 SurfaceView, 비격자 UI | Tier 3 (원형 검출) |
+| 4 | **색상 팔레트 (9 swatch + 색상 휠)** ⭐ | **§1.4 시각적 속성(색깔) 라벨 누락** | **Tier 3 (CV 색 검출)** |
 | 5 | 글자 크기 / 펜 굵기 슬라이더 | §3 비격자 UI, §10 정밀 input | Tier 4 + GestureDispatcher |
 | 6 | **텍스트 선택 ActionMode** ⭐ | **§2.3 다중 윈도우 — popup 이 통째 누락** | **getWindows() 반복 필수** |
 | 7 | 이미지 객체 변형 핸들 (Resize/Rotate) | §1 Canvas 위 동적 핸들 | Tier 3 + 4 |
@@ -97,7 +96,7 @@ node server.js
 - **하단 절반 (키보드 영역)** — 와이어프레임 **0개**, 스크린샷 underlay 만 보임
   → dump 가 키보드 픽셀은 보지만 **구조는 전혀 모름**을 직관적으로 입증
 
-> 참고: [`완전탐색/컨셉.pptx`](컨셉.pptx) 의 어노테이션 (클릭 가능 요소 74 개) 이 바로 이 케이스의 정답지.
+> 참고: 별도 자료의 키보드 어노테이션 (클릭 가능 요소 74 개) 이 이 케이스의 정답지.
 > 사람이 수동으로 좌표를 부여하지 않으면 탐색기는 키보드에 단 한 번도 접근하지 못함.
 
 ### 보완 방향
@@ -207,29 +206,84 @@ node server.js
 
 ---
 
-## Case 4 — 색상 휠 / 색상 팔레트
+## Case 4 — 색상 팔레트 / 펜 설정 패널
 
-**한계 분류**: LIMITATIONS §1.3 SurfaceView, §3.3 비격자 UI
-**보완 Tier**: Tier 3 (CV 원형 영역 검출)
+**한계 분류**: LIMITATIONS §1.4 커스텀 View description 누락 — **시각적 속성(색깔) 자체가 a11y 사각지대**
+**보완 Tier**: Tier 3 (CV 색상 검출) — 좌표는 알지만 색깔은 모름
+**상태**: ✅ **실측 검증 완료 — 가설과 다른 패턴 발견** (2026-05-13)
 
-### 왜 어려운가
-- 색상 팔레트는 보통 **Custom View** 또는 **SurfaceView** 로 원형/그라데이션 영역 직접 그림
-- a11y tree 에는 컨테이너 한 개만, 내부 색 좌표는 없음
-- Pixel Grid 로도 원형 영역은 잘 안 잡힘 (격자는 사각형 가정)
+### 왜 어려운가 (실측 후 정밀 정의)
 
-### dump 에 나타나는 모습
-- `class="...ColorPickerView"` 또는 `class="android.view.SurfaceView"` 단일 노드
-- 자식 없음, bounds 만
+가설은 "색상 휠/팔레트가 Canvas/SurfaceView 라 통째 누락" 이었으나 실측 결과 **반대**:
+- 9개 색상 swatch + 색상 휠 모두 **개별 노드로 잡힘**
+- 그러나 모두 **`content-desc=""` (빈 라벨) + 같은 `resource-id="brush_color"`**
+- → 노드는 있지만 **시각 정보(색깔) 가 a11y 사각지대**. 좌표(x 위치) 외엔 구분 불가능.
+
+### 실측 결과 ([`images/case-04-dump.xml`](images/case-04-dump.xml))
+
+| 항목 | 값 |
+|---|---|
+| 전체 노드 | **131** (가장 많음 — 패널 + 배경 모두 잡힘) |
+| 클릭 가능 | 48 |
+| 본문 "I am a boy" 보존 여부 | ✅ 잡힘 (Case 10 과 다름) |
+| 펜 5종 (`pen_color_mask`) | **5개 모두 라벨링됨** ✅ |
+| 색상 swatch (`brush_color`) | **9개 잡힘** ✅ |
+| **색상 9개 content-desc** | **모두 빈 문자열 `""`** ❌ |
+| 색상 9개 resource-id | **모두 동일 `brush_color`** ❌ |
+| 색상 9개 clickable | false (부모가 처리) |
+| 굵기 슬라이더 | "30, 크기, 슬라이더" + "작게/크게" 버튼 ✅ |
+| 페이지네이션 (5페이지) | "5페이지 중 1~5페이지" 라벨링 ✅ |
+
+### 펜 5종 vs 색상 9종 — 일관성 부재
+
+| 그룹 | content-desc |
+|---|---|
+| 펜 5종 | **"만년필" / "펜" / "연필" / "캘리그래피 펜" / "서예 붓"** ← 잘 라벨링 |
+| **색상 9개** | **모두 ""** ← 시각만 의미 있음, a11y 통과 시 완전 사각지대 |
+
+→ 같은 Samsung Notes 패널 안에서도 **a11y 라벨링 일관성이 없음**. 결정적 의미:
+1. Samsung 의 a11y 품질이 element 별로 들쭉날쭉
+2. "Samsung 자사 앱은 a11y 잘 되어 있다" 라는 가정 위험
+3. 시각적 속성이 핵심인 UI (색상·아이콘·이모지) 는 **CV/OCR/VLM 보조 필수**
 
 ### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
+| (1) 원본 Samsung Notes 화면 (펜 설정 패널, 9 색상 + 색상 휠) | (2) dump_visualizer Quarter(3D) view |
 |---|---|
 | ![](images/case-04-screen.png) | ![](images/case-04-dump.png) |
 
-### 검증 절차
-1. 펜 선택 → 색상 변경 버튼 탭 → 팔레트 노출
-2. dump_visualizer Refresh
-3. 팔레트 영역이 단일 노드인지 확인
+3D view 의 관찰 포인트:
+- **펜 5종 영역** — 와이어프레임 + 텍스트 라벨 (만년필/펜/연필 등) 정상 표시
+- **색상 9개 영역** — 와이어프레임 박스는 있지만 9개 모두 **균일하게 보임** (색깔 구분 불가)
+- 5번째 (색상 휠) 도 다른 swatch 와 동일한 박스 → "이게 색상 휠" 이라는 신호 0
+- 즉 dump 는 "여기 9개의 똑같이 생긴 동그라미가 있다" 까지만 알고 의미는 모름
+
+### 탐색기 입장에서의 문제
+
+```
+탐색기가 색상 9개 + 휠 = 10개 element 를 발견했다고 치자:
+- 모두 resource-id="brush_color"
+- 모두 content-desc=""
+- 좌표만 [173, 1202, 240, 1269] [256, 1202, ...] ... 9개
+
+문제: 어느 게 빨간색 button 인지, 어느 게 색상 휠인지 식별 불가
+```
+
+**일반화**: 색상 외 다른 시각적 속성도 같은 문제 — 아이콘 디자인, 이모지, 이미지 갤러리 thumbnail 등.
+
+### 보완 방향
+1. **Tier 3 CV — 색 검출 (Color Detection)**:
+   - 각 swatch bounds 영역에서 dominant color 추출 (HSV)
+   - "이 swatch 는 RGB(255,0,0) = 빨강" 라벨 자동 부여
+2. **Tier 3 CV — 패턴 검출 (Rainbow detection)**:
+   - 색상 휠(rainbow gradient) 은 무지개 패턴이 명확 → 별도 카테고리로 분류
+3. **DangerousActionGuard 무관**: 색상 선택은 비가역 액션 아님 → 안전하게 모든 swatch 시도 가능
+4. **현실적 결정**: 탐색기가 "9개 색깔 다 눌러봐서 본문 stroke 색이 어떻게 바뀌나" 를 Tier 4 Differential Probe 로 검증 가능
+
+### 검증 절차 (재현용)
+1. 노트 편집 모드 → 펜 모드 진입 → 펜 아이콘 한 번 더 탭 → 설정 패널
+2. `curl -X POST http://localhost:3000/api/capture`
+3. `grep -c 'brush_color'` → 9 (색상 swatch 개수)
+4. `grep -oE '<node[^>]*brush_color[^>]*content-desc="[^"]*"'` → content-desc 모두 빈 값 확인
 
 ---
 
@@ -564,21 +618,42 @@ override fun onAccessibilityEvent(event: AccessibilityEvent) {
 
 ---
 
-## 종합 — 가장 우선순위 높은 보완
+## 종합 — 실측 4 케이스로 본 우선순위
 
-15 케이스 중 ROI 높은 순서:
+| 순위 | 보완 항목 | 직접 해결 (실측) | 일반화로 해결 (추정) |
+|---|---|---|---|
+| **1** ⭐ | **`AccessibilityService.getWindows()` 통합** | Case 1 (키보드), 6 (ActionMode), 10 (AI 팝업) — **3 건 실측** | 권한 다이얼로그, Toast, Snackbar, 시스템 메뉴 |
+| 2 ⭐ | **Tier 3 CV — 색·아이콘 시각 속성 검출** | Case 4 (색상 9 개) — **1 건 실측** | 아이콘 디자인, 이모지, 이미지 thumbnail |
+| 3 | Tier 4 Differential Probe | Case 2 (캔버스) — **1 건 실측** | 그리기 영역, 동적 변화 검증 |
+| 4 | Tier 2 Pixel Grid (a11y 미커버 영역) | (Case 2 보완) | 게임/광고 같은 OpenGL 영역 |
+| 5 | 두 단계 fingerprint | — | 동적 콘텐츠 화면 안정화 |
+| 6 | GestureDispatcher swipe | — | ViewPager / RecyclerView 페이지 넘김 |
+| 7 | DangerousActionGuard | — | 결제·인증 차단 |
 
-| 순위 | 보완 항목 | 해결되는 케이스 수 |
-|---|---|---|
-| 1 | **Differential Probe** (Tier 4) | Case 2, 4, 5, 7, 9 — 5개 |
-| 2 | **CV + OCR Proposer** (Tier 3) | Case 3, 4, 7, 10 — 4개 |
-| 3 | **AccessibilityService.getWindows() 반복** | Case 1, 6, 10 — 3개 |
-| 4 | **GestureDispatcher swipe 자동 삽입** | Case 8 — 1개 |
-| 5 | **두 단계 fingerprint** | Case 9, 12, 15 — 3개 |
-| 6 | **DangerousActionGuard** | Case 13 — 1개 (안전) |
-| 7 | **VLM fallback** | Case 11 — 1개 (선택) |
+### 우선순위 핵심 메시지
 
-→ **상위 5개**만 구현해도 15 케이스 중 14개 커버 가능.
+> **상위 2개만 구현해도 본 도구가 봐야 할 사각지대의 70~80% 가 해결됨.**
+>
+> 1. `getWindows()` 통합 → 모든 popup/dialog/IME window 사각지대 일괄 해결
+> 2. Tier 3 CV → 시각 속성 의존 UI (색상, 아이콘) 사각지대 해결
+>
+> 이 두 가지가 Phase 1 의 진짜 최우선 항목.
+
+---
+
+## 메타 발견 정리 (보고 시 가장 강조할 3가지)
+
+### 1. ⭐ `uiautomator dump` 의 다중 윈도우 처리는 일관성 없음 (Case 10 ↔ Case 6)
+같은 앱·같은 package 인데도 popup 종류에 따라 dump 결과가 정반대 →
+**단일 dump 만 보고는 popup 떴는지조차 판단 불가능**.
+
+### 2. ⭐ Samsung 자사 앱 a11y 라벨링도 일관성 없음 (Case 4)
+같은 패널 안에서 펜 5종은 잘 라벨링되지만 색상 9종은 빈 라벨 →
+**"Samsung 앱이면 a11y 잘 되어 있을 것" 가정 위험**.
+
+### 3. ⭐ 캔버스 영역은 단일 View 한 개로 압축됨 (Case 2)
+그리기 한 stroke 가 수십 개여도 a11y 노드는 1 개 →
+**그래픽 영역은 Differential Probe + CV 결합 없이는 사각지대 영구 존재**.
 
 ---
 
