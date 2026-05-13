@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UI 완전탐색 — 기술적 한계와 극복 전략</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f2f3f3;
+    --bg-tertiary: #e9ebed;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f9fafb;
+    --bg-header: #232f3e;
+    --bg-hero-grad-1: #ffffff;
+    --bg-hero-grad-2: #e8f4f8;
+    --bg-hero-grad-3: #f0e6ff;
+    --bg-hero-grad-4: #e0f7f0;
+
+    --text-primary: #16191f;
+    --text-secondary: #545b64;
+    --text-tertiary: #879596;
+    --text-link: #0073bb;
+
+    --border-primary: #d5dbdb;
+    --border-secondary: #eaeded;
+    --border-soft: #e0e3e7;
+
+    --accent-primary: #ec7211;
+    --accent-primary-hover: #eb5f07;
+    --accent-secondary: #0073bb;
+
+    --status-active: #50C878;
+    --status-dev: #F5A623;
+    --status-planned: #879596;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html{font-size:16px;scroll-behavior:smooth}
+  body{
+    font-family:'Pretendard Variable','Pretendard','Amazon Ember',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg-primary);
+    color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.6;
+    letter-spacing:-0.3px;
+  }
+  a{color:var(--text-link);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:#f2f3f3}
+  ::-webkit-scrollbar-thumb{background:#d5dbdb;border-radius:3px}
+  ::selection{background:var(--accent-primary);color:#fff}
+
+  /* HEADER */
+  .header{position:sticky;top:0;z-index:50;background:var(--bg-header);height:56px;display:flex;align-items:center;padding:0 40px}
+  .headerInner{max-width:1200px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:15px;letter-spacing:-0.5px}
+  .brandBox{width:28px;height:28px;border-radius:4px;background:var(--accent-primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff}
+  .navBar{display:flex;gap:28px}
+  .navBar a{color:rgba(255,255,255,0.75);font-size:13px;font-weight:500;letter-spacing:-0.2px;transition:color 0.15s}
+  .navBar a:hover{color:var(--accent-primary);text-decoration:none}
+
+  /* HERO */
+  .hero{padding:0 40px;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,var(--bg-hero-grad-1) 0%,var(--bg-hero-grad-2) 25%,var(--bg-hero-grad-3) 50%,var(--bg-hero-grad-4) 75%,var(--bg-hero-grad-1) 100%);
+    background-size:400% 400%;animation:heroGradient 12s ease infinite}
+  @keyframes heroGradient{
+    0%{background-position:0% 50%}
+    25%{background-position:100% 50%}
+    50%{background-position:100% 0%}
+    75%{background-position:0% 100%}
+    100%{background-position:0% 50%}
+  }
+  .heroWrap{display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center;padding:72px 0 80px;max-width:1200px;margin:0 auto}
+  .heroLabel{display:inline-block;font-size:12px;font-weight:700;color:var(--accent-primary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;padding:4px 14px;border:1px solid #ec721140;border-radius:20px;background:#ec721108}
+  .heroTitle{font-size:42px;font-weight:800;line-height:1.18;color:var(--text-primary);margin:0 0 16px;letter-spacing:-1.2px}
+  .heroTitle em{color:var(--accent-primary);font-style:normal}
+  .heroSub{font-size:16px;color:var(--text-secondary);line-height:1.7;margin:0 0 36px;letter-spacing:-0.4px;max-width:560px}
+  .heroBtns{display:flex;gap:12px;flex-wrap:wrap}
+  .btnOrange{padding:12px 28px;border-radius:var(--radius-sm);border:none;background:var(--accent-primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.15s}
+  .btnOrange:hover{background:var(--accent-primary-hover)}
+  .btnOutline{padding:12px 28px;border-radius:var(--radius-sm);border:1px solid var(--text-primary);background:transparent;color:var(--text-primary);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;text-decoration:none;display:inline-block}
+  .btnOutline:hover{background:var(--text-primary);color:#fff;text-decoration:none}
+  .heroRight{display:flex;align-items:center;justify-content:center}
+  .heroVisual{width:420px;height:300px;border-radius:var(--radius-lg);background:#0a1929;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15);animation:heroImgIn 0.8s ease forwards;display:flex;align-items:center;justify-content:center;padding:24px}
+  @keyframes heroImgIn{from{opacity:0;transform:translateY(20px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .heroVisualStack{display:flex;flex-direction:column;gap:8px;width:100%}
+  .heroVisualTier{padding:10px 14px;border-radius:6px;color:#fff;font-size:12px;font-weight:600;letter-spacing:-0.3px;display:flex;justify-content:space-between;align-items:center}
+  .heroVisualTier span:last-child{font-size:10px;opacity:0.7;font-weight:500}
+  .heroVisualTier.t5{background:#ec7211}
+  .heroVisualTier.t4{background:#d8650f;margin-left:8px}
+  .heroVisualTier.t3{background:#0073bb;margin-left:16px}
+  .heroVisualTier.t2{background:#005f96;margin-left:24px}
+  .heroVisualTier.t1{background:#16191f;color:#cbd5e1;margin-left:32px}
+
+  /* STATS */
+  .statsSection{background:#fff;padding:36px 40px;border-bottom:1px solid var(--border-primary)}
+  .statsInner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:32px;flex-wrap:wrap;padding:18px 28px;border:1px solid var(--border-soft);border-radius:10px;background:#fafbfc}
+  .statGroup{display:flex;align-items:center;gap:24px}
+  .statGroupLabel{font-size:13px;font-weight:800;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin:0;white-space:nowrap}
+  .statGroupCards{display:flex;align-items:center;gap:20px}
+  .statCard{display:flex;align-items:baseline;gap:5px}
+  .statNum{font-size:22px;font-weight:800;color:var(--text-primary);letter-spacing:-0.5px;line-height:1}
+  .statNumAccent{color:var(--accent-primary)}
+  .statLabel{font-size:12px;color:#687078;letter-spacing:-0.2px;white-space:nowrap;display:flex;align-items:center;gap:4px;font-weight:500}
+  .statDivider{width:1px;height:28px;background:var(--border-primary);flex-shrink:0}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .dotActive{background:var(--status-active)}
+  .dotDev{background:var(--status-dev)}
+  .dotPlanned{background:var(--status-planned)}
+
+  /* SECTION COMMON */
+  .section{padding:72px 40px;border-top:1px solid var(--border-primary);background:#fff}
+  .section.bgSoft{background:linear-gradient(180deg,#f8f9fa 0%,#fff 100%)}
+  .sectionInner{max-width:1200px;margin:0 auto}
+  .sectionLabel{display:inline-block;font-size:12px;font-weight:700;color:var(--accent-primary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;padding:4px 14px;border:1px solid #ec721140;border-radius:20px;background:#ec721108}
+  .sectionTitle{font-size:34px;font-weight:800;color:var(--text-primary);margin-bottom:14px;letter-spacing:-1.2px;line-height:1.25}
+  .sectionDesc{font-size:16px;color:var(--text-secondary);line-height:1.7;margin-bottom:40px;max-width:720px;letter-spacing:-0.4px}
+
+  /* PROBLEM CARDS (3 grid) */
+  .problemGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1200px}
+  .problemCard{background:#fff;border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:32px 28px 28px;transition:box-shadow 0.4s ease,transform 0.3s ease,border-color 0.3s ease;position:relative;overflow:hidden}
+  .problemCard:hover{transform:translateY(-4px);border-color:transparent;box-shadow:0 0 0 1px rgba(255,255,255,0.8),0 0 20px 4px var(--glow-color,#a855f7),0 8px 24px rgba(0,0,0,0.06)}
+  .problemCard[data-glow="rose"]{--glow-color:#f43f5e}
+  .problemCard[data-glow="amber"]{--glow-color:#f5a623}
+  .problemCard[data-glow="blue"]{--glow-color:#0073bb}
+  .problemNum{font-size:42px;font-weight:800;color:var(--glow-color,#ec7211);opacity:0.18;line-height:1;margin-bottom:10px;display:block}
+  .problemTitle{font-size:19px;font-weight:700;color:var(--text-primary);margin-bottom:8px;letter-spacing:-0.5px}
+  .problemDesc{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;letter-spacing:-0.3px}
+  .problemTags{display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:12px;font-weight:500;color:var(--text-secondary);background:#f1f3f5;border:1px solid var(--border-soft);border-radius:6px;padding:4px 12px;letter-spacing:-0.2px;white-space:nowrap}
+
+  /* TIER STACK */
+  .tierStack{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
+  .tiers{display:flex;flex-direction:column;gap:10px}
+  .tier{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-radius:var(--radius-md);color:#fff;transition:transform 0.25s ease,box-shadow 0.25s ease;cursor:default}
+  .tier:hover{transform:translateX(4px);box-shadow:0 6px 20px rgba(0,0,0,0.1)}
+  .tierLeft{display:flex;flex-direction:column;gap:2px}
+  .tierLabel{font-size:11px;font-weight:700;letter-spacing:1.5px;opacity:0.85;text-transform:uppercase}
+  .tierName{font-size:18px;font-weight:800;letter-spacing:-0.5px}
+  .tierDesc{font-size:13px;opacity:0.85;margin-top:6px;letter-spacing:-0.2px;max-width:380px}
+  .tierBadge{padding:5px 12px;border-radius:20px;background:rgba(255,255,255,0.18);font-size:11px;font-weight:600;letter-spacing:-0.1px;white-space:nowrap}
+  .t5{background:linear-gradient(135deg,#ec7211 0%,#d8650f 100%)}
+  .t4{background:linear-gradient(135deg,#d8650f 0%,#b85408 100%)}
+  .t3{background:linear-gradient(135deg,#0073bb 0%,#005f96 100%)}
+  .t2{background:linear-gradient(135deg,#005f96 0%,#004a78 100%)}
+  .t1{background:#fff;color:var(--text-primary);border:1px solid var(--border-primary)}
+  .t1 .tierLabel{opacity:0.6}
+  .t1 .tierDesc{color:var(--text-secondary);opacity:1}
+  .t1 .tierBadge{background:#f1f3f5;color:var(--text-secondary)}
+
+  .principles{display:flex;flex-direction:column;gap:16px}
+  .principle{background:#fff;border:1px solid var(--border-primary);border-radius:var(--radius-md);padding:20px 24px;transition:border-color 0.15s}
+  .principle:hover{border-color:#aab7b8}
+  .principleLabel{font-size:11px;font-weight:700;color:var(--accent-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .principleTitle{font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:6px}
+  .principleDesc{font-size:13px;color:var(--text-secondary);line-height:1.6;letter-spacing:-0.2px}
+
+  /* COVERAGE TABLE */
+  .coverageWrap{background:#fff;border:1px solid var(--border-primary);border-radius:var(--radius-lg);overflow:hidden}
+  .coverageLegend{display:flex;justify-content:flex-end;gap:18px;margin-bottom:20px;font-size:12px;color:var(--text-secondary)}
+  .coverageLegend span{display:flex;align-items:center;gap:6px}
+  .heatBox{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,0.04)}
+  table.coverage{width:100%;border-collapse:collapse}
+  table.coverage thead th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-tertiary);font-weight:700;padding:16px 18px;background:#fafbfc;border-bottom:1px solid var(--border-primary);text-align:center}
+  table.coverage thead th:first-child{text-align:left}
+  table.coverage td{padding:14px 18px;border-bottom:1px solid var(--border-secondary);font-size:14px;text-align:center}
+  table.coverage td:first-child{text-align:left;font-weight:600;color:var(--text-primary)}
+  table.coverage tbody tr:hover{background:#fafbfc}
+  table.coverage tbody tr:last-child td{border-bottom:none}
+  .heatCell{display:inline-flex;align-items:center;gap:6px}
+
+  /* CARDS GRID (12) */
+  .filterRow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+  .filterGroup{display:flex;gap:8px;flex-wrap:wrap}
+  .filterBtn{padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border-primary);background:#fff;color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit}
+  .filterBtn:hover{border-color:#aab7b8;color:var(--text-primary)}
+  .filterBtn.active{background:var(--accent-primary);color:#fff;border-color:var(--accent-primary)}
+
+  .cardGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .lcCard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--border-primary);border-radius:var(--radius-lg);overflow:hidden;transition:box-shadow 0.4s ease,border-color 0.3s ease,transform 0.3s ease}
+  .lcCard:hover{transform:translateY(-4px);border-color:transparent;box-shadow:0 0 0 1px rgba(255,255,255,0.8),0 0 20px 4px var(--glow-color,#a855f7),0 8px 24px rgba(0,0,0,0.06)}
+  .lcCard[data-effort="green"]{--glow-color:#50C878}
+  .lcCard[data-effort="yellow"]{--glow-color:#F5A623}
+  .lcCard[data-effort="red"]{--glow-color:#f43f5e}
+  .lcHead{padding:18px 24px 14px;border-bottom:1px solid var(--border-secondary);display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .lcNum{width:32px;height:32px;border-radius:var(--radius-sm);background:#fafbfc;border:1px solid var(--border-soft);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--text-primary);flex-shrink:0}
+  .lcTitle{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-0.4px;flex:1}
+  .lcPill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px;text-transform:uppercase}
+  .lcPill.green{background:#e8f5ec;color:#0e6635}
+  .lcPill.yellow{background:#fef3e0;color:#8a5a0a}
+  .lcPill.red{background:#fde8eb;color:#9b1c2e}
+  .lcBody{padding:18px 24px 22px;display:flex;flex-direction:column;gap:14px;flex:1}
+  .lcSection h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-tertiary);margin-bottom:6px}
+  .lcSection p{font-size:13.5px;line-height:1.65;color:var(--text-secondary);letter-spacing:-0.2px}
+  .lcSection.counter h4{color:var(--accent-primary)}
+  .lcSection.counter p{color:var(--text-primary);font-weight:500}
+
+  /* PRIORITY 2x2 */
+  .matrixWrap{display:grid;grid-template-columns:24px 1fr;grid-template-rows:1fr 24px;gap:8px;height:480px;max-width:1100px}
+  .matrixYAxis{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1.5px}
+  .matrixXAxis{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1.5px}
+  .matrix{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px}
+  .quad{padding:20px;border-radius:var(--radius-lg);position:relative;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--border-primary)}
+  .quad .quadLabel{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
+  .quadChips{display:flex;flex-wrap:wrap;gap:8px}
+  .quadChip{padding:6px 12px;border-radius:20px;font-size:12.5px;font-weight:600;letter-spacing:-0.1px}
+  .q1{background:#eafaf0;border-color:#bae5c8}
+  .q1 .quadLabel{color:#1d7a47}
+  .q1 .quadChip{background:#1d8102;color:#fff}
+  .q1 .quadChip.star{background:#0e6635;box-shadow:0 0 0 2px #fff,0 0 0 3px #1d8102}
+  .q2{background:#fef6e7;border-color:#fadaa0}
+  .q2 .quadLabel{color:#8a5a0a}
+  .q2 .quadChip{background:#ec7211;color:#fff}
+  .q3{background:#f4f6f8;border-color:#dde2e6}
+  .q3 .quadLabel{color:#545b64}
+  .q3 .quadChip{background:#cbd5e1;color:#16191f}
+  .q4{background:#fdeef0;border-color:#f5c0c8}
+  .q4 .quadLabel{color:#9b1c2e}
+  .q4 .quadChip{background:#dc2c42;color:#fff}
+
+  /* ROADMAP */
+  .roadmapList{position:relative;border-left:2px solid var(--border-primary);margin-left:12px;padding-left:0}
+  .roadmapItem{position:relative;padding:0 0 24px 32px}
+  .roadmapItem:last-child{padding-bottom:0}
+  .roadmapDot{position:absolute;left:-9px;top:4px;width:16px;height:16px;border-radius:50%;border:4px solid;background:#fff}
+  .roadmapDot.done{border-color:var(--status-active)}
+  .roadmapDot.now{border-color:var(--accent-primary);box-shadow:0 0 0 4px #ec721122}
+  .roadmapDot.plan{border-color:var(--border-primary)}
+  .roadmapTitle{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:4px;letter-spacing:-0.4px}
+  .roadmapDesc{font-size:13.5px;color:var(--text-secondary);line-height:1.6;letter-spacing:-0.2px}
+  .roadmapDesc b{color:var(--accent-primary);font-weight:700}
+
+  /* QUOTE */
+  .quoteSection{background:var(--bg-header);padding:64px 40px}
+  .quoteInner{max-width:900px;margin:0 auto;text-align:center}
+  .quoteLogo{font-size:28px;font-weight:900;color:var(--accent-primary);margin-bottom:24px;letter-spacing:-1px}
+  .quoteText{font-size:22px;font-weight:700;color:#fff;line-height:1.7;margin:0 0 20px;letter-spacing:-0.5px}
+  .quoteText b{color:var(--accent-primary)}
+  .quoteAuthor{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.5px;text-transform:uppercase}
+
+  /* FOOTER */
+  .footer{background:var(--bg-header);padding:32px 40px 24px;color:rgba(255,255,255,0.7);border-top:1px solid rgba(255,255,255,0.08)}
+  .footerInner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:12px;color:rgba(255,255,255,0.4)}
+  .footerInner code{background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:3px;color:rgba(255,255,255,0.7);font-size:11px}
+
+  /* RESPONSIVE */
+  @media (max-width:1024px){
+    .heroWrap{grid-template-columns:1fr;gap:32px}
+    .heroRight{display:none}
+    .heroTitle{font-size:32px}
+    .problemGrid,.cardGrid{grid-template-columns:repeat(2,1fr)}
+    .tierStack{grid-template-columns:1fr}
+    .header,.hero,.section,.statsSection,.quoteSection,.footer{padding-left:24px;padding-right:24px}
+  }
+  @media (max-width:768px){
+    .heroTitle{font-size:26px}
+    .heroBtns{flex-direction:column}
+    .problemGrid,.cardGrid{grid-template-columns:1fr}
+    .sectionTitle{font-size:24px}
+    .navBar{display:none}
+    .matrix{grid-template-columns:1fr}
+    .matrixWrap{height:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="headerInner">
+    <div class="brand">
+      <div class="brandBox">EX</div>
+      <span>UI 완전탐색 · Limits & Countermeasures</span>
+    </div>
+    <nav class="navBar">
+      <a href="#problem">문제</a>
+      <a href="#tiers">5-Tier</a>
+      <a href="#coverage">커버리지</a>
+      <a href="#cards">한계 × 극복</a>
+      <a href="#priority">우선순위</a>
+      <a href="#roadmap">로드맵</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="heroWrap">
+    <div>
+      <div class="heroLabel">android-ui-exhaustive-explorer · Phase 0 · Bootstrap</div>
+      <h1 class="heroTitle">
+        모바일 단말 UI <em>완전탐색</em>의<br/>
+        기술적 한계와 극복 전략
+      </h1>
+      <p class="heroSub">
+        단일 기법으로는 UI 완전탐색이 불가능하다.
+        12개 기술 영역의 사각지대와, 이를 메우는 <b>계층적 결합 + 상호 검증 + 위험 차단</b> 전략을 한 페이지로 정리한다.
+      </p>
+      <div class="heroBtns">
+        <a class="btnOrange" href="#tiers">5-Tier 전략 보기</a>
+        <a class="btnOutline" href="#priority">다음 분기 우선순위</a>
+      </div>
+    </div>
+    <div class="heroRight">
+      <div class="heroVisual">
+        <div class="heroVisualStack">
+          <div class="heroVisualTier t5">Tier 5 · VLM <span>fallback</span></div>
+          <div class="heroVisualTier t4">Tier 4 · Differential Probe <span>verify</span></div>
+          <div class="heroVisualTier t3">Tier 3 · CV + OCR <span>propose</span></div>
+          <div class="heroVisualTier t2">Tier 2 · Pixel Grid <span>blind spot</span></div>
+          <div class="heroVisualTier t1">Tier 1 · Accessibility <span>baseline</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="statsSection">
+  <div class="statsInner">
+    <div class="statGroup">
+      <h3 class="statGroupLabel">현황</h3>
+      <div class="statGroupCards">
+        <div class="statCard">
+          <span class="statNum statNumAccent">12</span>
+          <span class="statLabel">기술 영역</span>
+        </div>
+        <div class="statCard">
+          <span class="statNum">5</span>
+          <span class="statLabel">통합 Tier</span>
+        </div>
+      </div>
+    </div>
+    <div class="statDivider"></div>
+    <div class="statGroup">
+      <h3 class="statGroupLabel">진행</h3>
+      <div class="statGroupCards">
+        <div class="statCard">
+          <span class="statNum">9</span>
+          <span class="statLabel"><span class="dot dotActive"></span>완료</span>
+        </div>
+        <div class="statCard">
+          <span class="statNum">3</span>
+          <span class="statLabel"><span class="dot dotDev"></span>진행</span>
+        </div>
+        <div class="statCard">
+          <span class="statNum">4</span>
+          <span class="statLabel"><span class="dot dotPlanned"></span>계획</span>
+        </div>
+      </div>
+    </div>
+    <div class="statDivider"></div>
+    <div class="statGroup">
+      <h3 class="statGroupLabel">환경</h3>
+      <div class="statGroupCards">
+        <div class="statCard">
+          <span class="statNum statNumAccent">60s</span>
+          <span class="statLabel">앱당 탐색 예산</span>
+        </div>
+        <div class="statCard">
+          <span class="statNum">S26</span>
+          <span class="statLabel">One UI 8.5 eng</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="section" id="problem">
+  <div class="sectionInner">
+    <div class="sectionLabel">Problem</div>
+    <h2 class="sectionTitle">왜 Accessibility 하나로는 부족한가</h2>
+    <p class="sectionDesc">a11y는 표준 View 계층 + 명시 시맨틱만 본다. 픽셀로 그려지거나 시맨틱이 빠진 영역은 전부 사각지대다.</p>
+
+    <div class="problemGrid">
+      <div class="problemCard" data-glow="rose">
+        <span class="problemNum">01</span>
+        <h3 class="problemTitle">Canvas 렌더링</h3>
+        <p class="problemDesc">View 하나로 등록되고 내부는 픽셀로만 그려짐 → 자식 노드 없음. 노트앱 손글씨가 대표 사례.</p>
+        <div class="problemTags">
+          <span class="tag">Samsung Notes</span>
+          <span class="tag">차트</span>
+          <span class="tag">손글씨</span>
+        </div>
+      </div>
+      <div class="problemCard" data-glow="amber">
+        <span class="problemNum">02</span>
+        <h3 class="problemTitle">OpenGL / GLSurfaceView</h3>
+        <p class="problemDesc">GPU가 frame buffer에 직접 그림 → View 계층 밖. a11y tree에 흔적조차 없음.</p>
+        <div class="problemTags">
+          <span class="tag">게임</span>
+          <span class="tag">3D 뷰어</span>
+          <span class="tag">카메라 프리뷰</span>
+        </div>
+      </div>
+      <div class="problemCard" data-glow="blue">
+        <span class="problemNum">03</span>
+        <h3 class="problemTitle">커스텀 Popup · Toast</h3>
+        <p class="problemDesc">Window 등록 방식 불일치, 짧은 표시 → AccessibilityEvent를 놓치기 쉽다.</p>
+        <div class="problemTags">
+          <span class="tag">시스템 다이얼로그</span>
+          <span class="tag">Snackbar</span>
+          <span class="tag">컨텍스트 메뉴</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIER STACK -->
+<section class="section bgSoft" id="tiers">
+  <div class="sectionInner">
+    <div class="sectionLabel">Approach</div>
+    <h2 class="sectionTitle">5-Tier 계층 결합 전략</h2>
+    <p class="sectionDesc">각 Tier가 상위 Tier의 사각지대를 메운다. 단일 기법 의존을 피하고 상호 검증으로 false positive를 차단한다.</p>
+
+    <div class="tierStack">
+      <div class="tiers">
+        <div class="tier t5">
+          <div class="tierLeft">
+            <span class="tierLabel">Tier 5</span>
+            <span class="tierName">VLM (Vision Language Model)</span>
+            <p class="tierDesc">사내 Ollama 한정 호출. 추상 UI · 게임 메뉴 등 4번 Tier로도 못 풀리는 화면에서만 fallback.</p>
+          </div>
+          <span class="tierBadge">stuck fallback</span>
+        </div>
+        <div class="tier t4">
+          <div class="tierLeft">
+            <span class="tierLabel">Tier 4</span>
+            <span class="tierName">Differential Probe</span>
+            <p class="tierDesc">탭 전후 화면 diff로 실제 인터랙티브 영역만 채택. OpenGL/Canvas hit 검증의 핵심.</p>
+          </div>
+          <span class="tierBadge">verify · filter</span>
+        </div>
+        <div class="tier t3">
+          <div class="tierLeft">
+            <span class="tierLabel">Tier 3</span>
+            <span class="tierName">CV + OCR</span>
+            <p class="tierDesc">OpenCV로 버튼·아이콘 후보 검출, OCR로 위험 단어 매칭(블랙리스트).</p>
+          </div>
+          <span class="tierBadge">propose · label</span>
+        </div>
+        <div class="tier t2">
+          <div class="tierLeft">
+            <span class="tierLabel">Tier 2</span>
+            <span class="tierName">Pixel Grid Sampling</span>
+            <p class="tierDesc">a11y 미커버 영역을 coarse-to-fine 그리드로 스캔. Differential probe와 결합.</p>
+          </div>
+          <span class="tierBadge">blind spot</span>
+        </div>
+        <div class="tier t1">
+          <div class="tierLeft">
+            <span class="tierLabel">Tier 1</span>
+            <span class="tierName">Accessibility (a11y)</span>
+            <p class="tierDesc">기본 클릭 후보 추출. 현재 도구의 출발점이지만 단독으로는 사각지대가 큼.</p>
+          </div>
+          <span class="tierBadge">baseline</span>
+        </div>
+      </div>
+
+      <aside class="principles">
+        <div class="principle">
+          <div class="principleLabel">원칙 1 · 계층화</div>
+          <div class="principleTitle">Layering</div>
+          <div class="principleDesc">하위 Tier로 갈수록 정밀, 상위로 갈수록 광범위. 화면별로 자동 선택.</div>
+        </div>
+        <div class="principle">
+          <div class="principleLabel">원칙 2 · 상호 검증</div>
+          <div class="principleTitle">Cross-Validation</div>
+          <div class="principleDesc">a11y + CV + VLM 후보의 교집합·IoU로 false positive 자동 차단.</div>
+        </div>
+        <div class="principle">
+          <div class="principleLabel">원칙 3 · 위험 차단</div>
+          <div class="principleTitle">Guard</div>
+          <div class="principleDesc">결제·전송·삭제 키워드는 진입 전 블랙리스트로 차단 — 야간 자동 실행의 전제.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- COVERAGE HEATMAP -->
+<section class="section" id="coverage">
+  <div class="sectionInner">
+    <div class="sectionLabel">Coverage</div>
+    <h2 class="sectionTitle">기법 × UI 영역 커버리지</h2>
+    <p class="sectionDesc">행: UI 영역, 열: 적용 기법. 색 강도가 높을수록 해당 기법이 그 영역을 잘 커버한다는 의미.</p>
+
+    <div class="coverageLegend">
+      <span><span class="heatBox" style="background:#1d8102"></span>강함</span>
+      <span><span class="heatBox" style="background:#f5a623"></span>중간</span>
+      <span><span class="heatBox" style="background:#dc2c42"></span>약함</span>
+    </div>
+
+    <div class="coverageWrap">
+      <table class="coverage">
+        <thead>
+          <tr>
+            <th>UI 영역</th>
+            <th>a11y</th>
+            <th>Grid</th>
+            <th>CV + OCR</th>
+            <th>VLM</th>
+            <th>Diff Probe</th>
+          </tr>
+        </thead>
+        <tbody id="heatmap"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- CARDS: LIMITATIONS x COUNTERMEASURES -->
+<section class="section bgSoft" id="cards">
+  <div class="sectionInner">
+    <div class="sectionLabel">Details</div>
+    <h2 class="sectionTitle">12개 기술 영역 · 한계 × 극복</h2>
+    <p class="sectionDesc">각 영역의 한계와 즉시·중기·대규모 대응 방안. 우측 상단 필터로 작업량별 정렬 가능.</p>
+
+    <div class="filterRow">
+      <div class="filterGroup">
+        <button class="filterBtn active" data-filter="all">전체 (12)</button>
+        <button class="filterBtn" data-filter="green">🟢 즉시 적용</button>
+        <button class="filterBtn" data-filter="yellow">🟡 중간 규모</button>
+        <button class="filterBtn" data-filter="red">🔴 대규모</button>
+      </div>
+    </div>
+
+    <div class="cardGrid" id="cards-grid"></div>
+  </div>
+</section>
+
+<!-- PRIORITY 2x2 -->
+<section class="section" id="priority">
+  <div class="sectionInner">
+    <div class="sectionLabel">Priority</div>
+    <h2 class="sectionTitle">Effort × Impact 매트릭스</h2>
+    <p class="sectionDesc">왼쪽 위 = Quick Wins. 가장 적은 노력으로 가장 큰 커버리지 향상을 얻을 수 있는 항목.</p>
+
+    <div class="matrixWrap">
+      <div class="matrixYAxis">↑ High Impact</div>
+      <div class="matrix">
+        <div class="quad q1">
+          <div class="quadLabel">Quick Wins · 먼저 한다</div>
+          <div class="quadChips">
+            <span class="quadChip star">⭐ Differential Probe</span>
+            <span class="quadChip star">⭐ 두 단계 Fingerprint</span>
+            <span class="quadChip star">⭐ DangerousActionGuard</span>
+            <span class="quadChip">Coarse-to-fine Grid</span>
+            <span class="quadChip">Foreground Watcher</span>
+          </div>
+        </div>
+        <div class="quad q2">
+          <div class="quadLabel">Big Bets · 계획적으로</div>
+          <div class="quadChips">
+            <span class="quadChip">CV Proposer + OCR</span>
+            <span class="quadChip">VLM Hybrid (사내)</span>
+            <span class="quadChip">손글씨 Bezier 정밀화</span>
+          </div>
+        </div>
+        <div class="quad q3">
+          <div class="quadLabel">Fill-ins · 여유될 때</div>
+          <div class="quadChips">
+            <span class="quadChip">orientation fp 보조 키</span>
+            <span class="quadChip">노이즈 필터 강화</span>
+            <span class="quadChip">로그 화이트리스트</span>
+          </div>
+        </div>
+        <div class="quad q4">
+          <div class="quadLabel">Reconsider · 비용 큼</div>
+          <div class="quadChips">
+            <span class="quadChip">uinput 직접 사용</span>
+            <span class="quadChip">버전별 dumpsys 파서</span>
+          </div>
+        </div>
+      </div>
+      <div></div>
+      <div class="matrixXAxis">Low Effort → High Effort →</div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="section bgSoft" id="roadmap">
+  <div class="sectionInner">
+    <div class="sectionLabel">Roadmap</div>
+    <h2 class="sectionTitle">로드맵</h2>
+    <p class="sectionDesc">현재 Phase 0 (Bootstrap). 다음은 Phase 1 (Baseline Explorer) → Phase 2 (Blind Spot 보완) → Phase 3 (시스템 연계).</p>
+
+    <ol class="roadmapList">
+      <li class="roadmapItem">
+        <span class="roadmapDot now"></span>
+        <div class="roadmapTitle">Phase 0 · Bootstrap</div>
+        <div class="roadmapDesc">레포 셋업, 문서 정립, Android/Server/Web 스캐폴딩 — <b>진행 중</b></div>
+      </li>
+      <li class="roadmapItem">
+        <span class="roadmapDot plan"></span>
+        <div class="roadmapTitle">Phase 1 · Baseline Explorer</div>
+        <div class="roadmapDesc">Tier 1 (a11y) + Tier 4 (Differential Probe) 기본 DFS 엔진</div>
+      </li>
+      <li class="roadmapItem">
+        <span class="roadmapDot plan"></span>
+        <div class="roadmapTitle">Phase 2 · Blind Spot 보완</div>
+        <div class="roadmapDesc">Tier 2 (Pixel Grid) + Tier 3 (CV + OCR) + Tier 5 (VLM hybrid)</div>
+      </li>
+      <li class="roadmapItem">
+        <span class="roadmapDot plan"></span>
+        <div class="roadmapTitle">Phase 3 · System 연계</div>
+        <div class="roadmapDesc">dumpsys / logcat 보강 + 탐색 ↔ 추적 정합성 검증</div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section class="quoteSection">
+  <div class="quoteInner">
+    <div class="quoteLogo">android-ui-exhaustive-explorer</div>
+    <p class="quoteText">단일 기법으로는 완전탐색이 불가능하다.<br/><b>계층 + 검증 + 차단</b> 세 축이 유일한 현실적 해법.</p>
+    <div class="quoteAuthor">— Limitations &amp; Countermeasures Report</div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footerInner">
+    <div>android-ui-exhaustive-explorer · Limits & Countermeasures Report</div>
+    <div>출처 <code>docs/LIMITATIONS.md</code> · <code>docs/COUNTERMEASURES.md</code></div>
+  </div>
+</footer>
+
+<script>
+  // ---- Coverage data ----
+  const heatmap = [
+    { ui:'표준 Button',     a11y:3, grid:2, cv:2, vlm:2, probe:3 },
+    { ui:'EditText',        a11y:3, grid:2, cv:2, vlm:2, probe:3 },
+    { ui:'아이콘 버튼',      a11y:2, grid:2, cv:3, vlm:3, probe:3 },
+    { ui:'Canvas',          a11y:1, grid:2, cv:3, vlm:3, probe:3 },
+    { ui:'OpenGL',          a11y:1, grid:2, cv:2, vlm:3, probe:3 },
+    { ui:'SurfaceView',     a11y:1, grid:2, cv:2, vlm:3, probe:3 },
+    { ui:'WebView 내부',    a11y:1, grid:2, cv:2, vlm:2, probe:2 },
+    { ui:'커스텀 Popup',    a11y:2, grid:1, cv:2, vlm:2, probe:3 },
+    { ui:'Toast / Snackbar',a11y:1, grid:1, cv:2, vlm:2, probe:2 },
+    { ui:'손글씨 캔버스',    a11y:1, grid:2, cv:2, vlm:3, probe:3 },
+    { ui:'색상 휠',          a11y:1, grid:1, cv:3, vlm:3, probe:3 },
+  ];
+  const cellColor = v => ({ 3:'#1d8102', 2:'#f5a623', 1:'#dc2c42' })[v];
+  const cellLabel = v => ({ 3:'강함', 2:'중간', 1:'약함' })[v];
+  const tbody = document.getElementById('heatmap');
+  heatmap.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.ui}</td>
+      ${['a11y','grid','cv','vlm','probe'].map(k => `
+        <td>
+          <div class="heatCell">
+            <span class="heatBox" style="background:${cellColor(r[k])}"></span>
+            <span style="font-size:12px;color:var(--text-tertiary)">${cellLabel(r[k])}</span>
+          </div>
+        </td>`).join('')}
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // ---- 12 cards data ----
+  const items = [
+    { n:1, title:'Accessibility (a11y)', effort:'green',
+      limit:'Canvas/OpenGL/SurfaceView는 픽셀로만 그려져 a11y tree에서 누락. 커스텀 View는 description 없으면 식별 불가.',
+      counter:'Pixel grid + Differential probe로 hit 검증, CV로 후보 보완. Reflection으로 Compose 디버그 시맨틱스 접근(eng 한정).' },
+    { n:2, title:'UI Automator / View Dump', effort:'green',
+      limit:'dump 비용 큼, a11y blind spot 그대로 상속, 다중 윈도우 처리 불완전.',
+      counter:'event-driven a11y로 polling 대체. getWindows() 반복으로 다중 윈도우 수집. resource-id 우선 식별.' },
+    { n:3, title:'Pixel Grid Sampling', effort:'green',
+      limit:'노이즈 비율 높음. 해상도 트레이드오프. 원형·곡선 UI 약함.',
+      counter:'Coarse-to-fine 계층 그리드. Differential probe로 hit 좌표만 채택. CV로 원형 영역 좌표 보강.' },
+    { n:4, title:'Computer Vision (OpenCV)', effort:'yellow',
+      limit:'추상적 UI 약함. 텍스트 의미 모름. 테마 변화에 민감.',
+      counter:'OCR(ML Kit/Tesseract) 결합. HSV + adaptive threshold. a11y와 IoU 교차 검증.' },
+    { n:5, title:'VLM (Vision Language Model)', effort:'yellow',
+      limit:'비결정성·환각·좌표 부정확·사외 유출 위험.',
+      counter:'사내 Ollama 한정. temperature=0 + 2회 호출 교집합. bbox 받고 좌표는 자체 계산. fp 단위 결과 캐싱.' },
+    { n:6, title:'Differential Probe', effort:'green',
+      limit:'후보당 2회 캡처 비용. 시계·광고 동적 변화 오탐. 비가역 액션 위험.',
+      counter:'Top-N만 probe. perceptual hash + 영역 마스킹. 가변 wait(300/1000/3000ms).' },
+    { n:7, title:'State Fingerprint', effort:'green',
+      limit:'Strict→무한 신규, Loose→누락. 리스트 화면 모호. 회전·키보드 변동.',
+      counter:'두 단계 해시(strict+loose) 병행. 텍스트·숫자 정규화. orientation/IME를 보조 키로.' },
+    { n:8, title:'DFS + 백트래킹', effort:'green',
+      limit:'BACK 가로채기, 깊이 폭발, 비가역 분기, 외부 앱 이탈.',
+      counter:'BACK 후 fp 검증 + DialogDismisser. 깊이 상한 + resource-id 우선. DangerousActionGuard. Foreground watcher.' },
+    { n:9, title:'Replay (경로 재생)', effort:'green',
+      limit:'비결정성·좌표 깨짐·타이밍·외부 상태 의존.',
+      counter:'resource-id 우선 식별 + 정규화 좌표. idle-wait. DND 모드. 사전조건 명시.' },
+    { n:10, title:'dispatchGesture / Input', effort:'yellow',
+      limit:'시스템 UI 차단, 멀티터치 정밀도, 손글씨 곡선 보간 한계.',
+      counter:'adb input 폴백. multi-stroke timing 명시. Bezier 보간 + 가변 duration.' },
+    { n:11, title:'시스템 정보 (dumpsys/logcat)', effort:'yellow',
+      limit:'OS 버전별 포맷 불안정. 노이즈. 실시간성 부족.',
+      counter:'버전별 파서 분리. 태그 화이트리스트. a11y 이벤트와 병행 운영.' },
+    { n:12, title:'권한 / 보안 경계', effort:'green',
+      limit:'Accessibility 권한 수동 토글. 권한 다이얼로그 다국어. 인증·결제 사고 위험.',
+      counter:'adb settings 자동화. DialogDismisser의 NFC(유니코드 정규화). DangerousActionGuard 블랙리스트.' }
+  ];
+
+  const pillText = e => ({ green:'🟢 즉시', yellow:'🟡 중간', red:'🔴 대규모' })[e];
+  const grid = document.getElementById('cards-grid');
+  items.forEach(it => {
+    const card = document.createElement('article');
+    card.className = 'lcCard';
+    card.dataset.effort = it.effort;
+    card.innerHTML = `
+      <div class="lcHead">
+        <div class="lcNum">${String(it.n).padStart(2,'0')}</div>
+        <div class="lcTitle">${it.title}</div>
+        <span class="lcPill ${it.effort}">${pillText(it.effort)}</span>
+      </div>
+      <div class="lcBody">
+        <div class="lcSection">
+          <h4>한계</h4>
+          <p>${it.limit}</p>
+        </div>
+        <div class="lcSection counter">
+          <h4>극복</h4>
+          <p>${it.counter}</p>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Filter
+  document.querySelectorAll('.filterBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.filter;
+      document.querySelectorAll('#cards-grid > .lcCard').forEach(c => {
+        c.style.display = (f === 'all' || c.dataset.effort === f) ? '' : 'none';
+      });
+      document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
