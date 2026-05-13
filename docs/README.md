@@ -13,6 +13,7 @@
 | [`LIMITATIONS.md`](LIMITATIONS.md) | 기술별 사각지대 정리 (한계 영역 / 왜 못 보나 / 대표 예시) | 팀장 보고, QA 매니저 | 반기 (OS 변경 시) |
 | [`COUNTERMEASURES.md`](COUNTERMEASURES.md) | 한계별 극복 방안 + 우선순위 (한계 영역 / 극복 방안 / 비고) | 개발자, 로드맵 의사결정 | 월~분기 |
 | [`ROADMAP.md`](ROADMAP.md) | Phase 0~3 단계별 산출물·완료 기준 | 팀, 보고 | Phase 진입/종료 시 |
+| [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) | Samsung Notes 실측 검증 케이스 (15 케이스, 4 케이스 실측 완료) | 개발자, 보고 | 신규 케이스 캡처 시 |
 | [`report.html`](report.html) | 한눈에 보는 대시보드 (보고용) | 팀장·매니저 발표 | LIMITATIONS/COUNTERMEASURES 갱신 시 |
 
 ---

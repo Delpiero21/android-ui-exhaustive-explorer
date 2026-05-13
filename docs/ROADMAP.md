@@ -43,6 +43,10 @@
 | 1-8 | `tier4_probe/DifferentialProbe` | 후보 → HOT/COLD 분류, false positive ≤ 20% |
 | 1-9 | `input/GestureDispatcher` + `input/TextInputSampler` | tap, longpress, swipe, SET_TEXT 모두 동작 |
 | 1-10 | `service/ExplorerAccessibilityService` 진입점 | UI 토글로 탐색 시작/종료 |
+| **1-0** | **⭐ `tier1_a11y/MultiWindowCollector` — `AccessibilityService.getWindows()` 반복** | **`uiautomator dump` 의존 제거, popup·IME 통합 dump (Case 1·6·10 해결)** |
+
+> 1-0 은 [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) 의 메타 발견으로 **Phase 1 최우선 항목**으로 격상됨.
+> 단일 dump 로는 어떤 popup 이 잡히고 어떤 popup 이 누락되는지 예측 불가능.
 
 **Phase 1 종료 목표 (Samsung Notes 1개 앱)**:
 - 발견 화면 ≥ 10
