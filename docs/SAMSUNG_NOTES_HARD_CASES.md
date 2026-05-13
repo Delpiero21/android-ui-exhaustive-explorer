@@ -40,25 +40,19 @@ node server.js
 
 ## 케이스 색인
 
+실측 검증한 5 케이스만 정리한다 (SM-S947U1 / Android 16 / Samsung Notes).
+가설 단계의 다른 케이스는 보고 신뢰도 유지를 위해 본 문서에서 제외 — 추후 캡처 시 추가 예정.
+
 | # | 케이스 | 한계 분류 | 보완 Tier |
 |---|---|---|---|
-| 1 | SIP 키보드 (Samsung Keyboard) | §2 다중 윈도우 처리 불완전 | Tier 1 + dumpsys window |
-| 2 | 손글씨 캔버스 (Drawing Canvas) | §1 Canvas | Tier 2 + 3 + 4 |
-| 3 | 펜·형광펜·지우개 도구바 | §1 커스텀 View description 누락 | Tier 3 (CV + OCR) — **One UI 8.5 에서 반증됨 (Case 2 분석 참조)** |
-| 4 | **색상 팔레트 (9 swatch + 색상 휠)** ⭐ | **§1.4 시각적 속성(색깔) 라벨 누락** | **Tier 3 (CV 색 검출)** |
-| 5 | 글자 크기 / 펜 굵기 슬라이더 | §3 비격자 UI, §10 정밀 input | Tier 4 + GestureDispatcher |
-| 6 | **텍스트 선택 ActionMode** ⭐ | **§2.3 다중 윈도우 — popup 이 통째 누락** | **getWindows() 반복 필수** |
-| 7 | 이미지 객체 변형 핸들 (Resize/Rotate) | §1 Canvas 위 동적 핸들 | Tier 3 + 4 |
-| 8 | 노트 페이지 넘김 (Swipe) | §10 멀티터치/제스처 | Tier 1 + GestureDispatcher swipe |
-| 9 | 음성 녹음 waveform | §1 Canvas + §1.9 동적 콘텐츠 | Tier 2 + 4 |
-| 10 | **AI 어시스트 팝업** ⭐ | **§2.3 다중 윈도우 — Popup 떠 있으면 main window 통째 누락** | **getWindows() 반복 필수** |
-| 11 | S Pen hover preview | §1.8 짧은 표시 | Tier 5 (VLM)·캐치 어려움 |
-| 12 | 자동 저장 indicator (일시적) | §1.10 타이밍 의존 | Settle detection |
-| 13 | 잠금 노트 인증 UI | §12 시스템 영역 무력 | DangerousActionGuard 차단 |
-| 14 | 자석 그리드 / 가이드라인 | §1 Canvas 위 그려짐 | 무시 (UI 요소 아님) |
-| 15 | 그리기 영역 동적 콘텐츠 (사용자 stroke) | §1.9 fingerprint 불안정 | 두 단계 fingerprint |
+| 1 | SIP 키보드 (Samsung Keyboard) | §2 다중 윈도우 — IME window 누락 | `getWindows()` 반복 + `input keyevent` 폴백 |
+| 2 | 손글씨 캔버스 (Drawing Canvas) | §1.1 Canvas — 단일 View 압축 | Tier 4 Differential Probe + Tier 2 Grid (또는 skip) |
+| 4 | **색상 팔레트 (9 swatch + 색상 휠)** ⭐ | §1.4 시각적 속성(색깔) 라벨 누락 | Tier 3 CV 색 검출 |
+| 6 | **텍스트 선택 ActionMode** ⭐ | §2.3 다중 윈도우 — 시스템 popup 통째 누락 | `getWindows()` 반복 필수 |
+| 10 | **AI 어시스트 팝업** ⭐ | §2.3 다중 윈도우 — Popup 떠 있으면 main 누락 | `getWindows()` 반복 필수 |
 
-→ LIMITATIONS.md 의 12개 영역 중 **§1 a11y · §2 UIAutomator · §10 dispatchGesture · §12 권한** 항목이 집중적으로 나타남.
+→ LIMITATIONS.md 의 12개 영역 중 **§1 a11y · §2 UIAutomator · §10 dispatchGesture** 항목이 집중적으로 나타남.
+→ 그 중 **§2.3 다중 윈도우 처리 불완전** 한 가지로 5 케이스 중 3 케이스가 직접 매핑됨.
 
 ---
 
@@ -179,33 +173,6 @@ node server.js
 
 ---
 
-## Case 3 — 펜·형광펜·지우개 도구바
-
-**한계 분류**: LIMITATIONS §1.4 커스텀 View description 누락, §1.5 Compose semantics 미지정
-**보완 Tier**: Tier 3 (CV + OCR)
-
-### 왜 어려운가
-- 도구바의 아이콘 버튼 일부는 `contentDescription` 미설정
-- Compose ImageVector 아이콘은 `Modifier.semantics` 없으면 a11y tree 누락
-- 노드는 있어도 "이게 펜인지 지우개인지" 식별 불가
-
-### dump 에 나타나는 모습
-- 도구바 컨테이너는 있음
-- 아이콘 버튼이 `class="android.widget.ImageButton"` 으로 잡히지만 `text=""`, `content-desc=""`
-- 단순 좌표만 알 수 있고 기능은 모름
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-03-screen.png) | ![](images/case-03-dump.png) |
-
-### 검증 절차
-1. 노트 편집 모드 진입 → 상단/하단 도구바 노출
-2. dump_visualizer Refresh
-3. 각 아이콘 노드의 `content-desc`, `text` 속성 비어있는지 확인
-
----
-
 ## Case 4 — 색상 팔레트 / 펜 설정 패널
 
 **한계 분류**: LIMITATIONS §1.4 커스텀 View description 누락 — **시각적 속성(색깔) 자체가 a11y 사각지대**
@@ -284,27 +251,6 @@ node server.js
 2. `curl -X POST http://localhost:3000/api/capture`
 3. `grep -c 'brush_color'` → 9 (색상 swatch 개수)
 4. `grep -oE '<node[^>]*brush_color[^>]*content-desc="[^"]*"'` → content-desc 모두 빈 값 확인
-
----
-
-## Case 5 — 글자 크기 / 펜 굵기 슬라이더
-
-**한계 분류**: LIMITATIONS §3.3 비격자 UI, §10.2 멀티터치 정밀도
-**보완 Tier**: Tier 4 (Differential Probe) + GestureDispatcher 정밀 swipe
-
-### 왜 어려운가
-- SeekBar 또는 커스텀 슬라이더 — dump 에는 노드 1개
-- "값 범위 0~20" 같은 의미는 노드 속성에 없음
-- 탭 한 번으로는 의미 있는 결과 도출 어려움 (드래그 필요)
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-05-screen.png) | ![](images/case-05-dump.png) |
-
-### 검증 절차
-1. 펜 굵기 변경 UI 노출
-2. dump 의 SeekBar 노드 확인 — 슬라이더 양 끝 외에 값별 child 가 없음을 확인
 
 ---
 
@@ -393,59 +339,6 @@ override fun onAccessibilityEvent(event: AccessibilityEvent) {
 - 향후 시스템 권한 다이얼로그, Snackbar, Toast 도 같은 메커니즘
 
 → **본 도구 Phase 1 에서 가장 먼저 구현해야 할 핵심 기능.**
-
----
-
-## Case 7 — 이미지 객체 변형 핸들 (Resize / Rotate)
-
-**한계 분류**: LIMITATIONS §1.1 Canvas 위 동적 핸들
-**보완 Tier**: Tier 3 (CV 코너 점 검출) + Tier 4
-
-### 왜 어려운가
-- 첨부한 이미지/그림을 탭하면 8개 corner/edge handle + 회전 핸들 나타남
-- 이 핸들들은 보통 Canvas 위에 직접 그려지거나 별도 transient view
-- dump 시점에 따라 사라져있을 수 있음
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-07-screen.png) | ![](images/case-07-dump.png) |
-
----
-
-## Case 8 — 노트 페이지 넘김 (Swipe Gesture)
-
-**한계 분류**: LIMITATIONS §10 dispatchGesture / Input
-**보완 Tier**: Tier 1 + GestureDispatcher swipe 액션 자동 삽입
-
-### 왜 어려운가
-- 노트 페이지 전환은 좌/우 swipe — **클릭이 아닌 제스처**
-- dump 에는 ViewPager 또는 RecyclerView 만 보이고 "swipe 가능" 외 정보 없음
-- 탐색 알고리즘이 tap 만 시도하면 다음 페이지를 영원히 못 봄
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-08-screen.png) | ![](images/case-08-dump.png) |
-
-### 보완 방법
-- `scrollable=true` 또는 `ViewPager` 패턴이 감지되면 자동으로 4방향 swipe 후보 생성
-
----
-
-## Case 9 — 음성 녹음 waveform
-
-**한계 분류**: LIMITATIONS §1.1 Canvas + §1.9 동적 콘텐츠
-**보완 Tier**: Tier 2 + Tier 4 (대부분 무시해도 됨)
-
-### 왜 어려운가
-- 녹음 중 실시간 변하는 waveform — Canvas 또는 SurfaceView
-- 매 dump 마다 픽셀이 다름 → strict fingerprint 가 매번 새 화면으로 인식
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-09-screen.png) | ![](images/case-09-dump.png) |
 
 ---
 
@@ -550,75 +443,7 @@ override fun onAccessibilityEvent(event: AccessibilityEvent) {
 
 ---
 
-## Case 11 — S Pen hover preview
-
-**한계 분류**: LIMITATIONS §1.8 짧은 표시
-**보완 Tier**: 캐치 어려움 — VLM 보조 또는 무시
-
-### 왜 어려운가
-- S Pen 호버 시 잠시 떴다 사라지는 미리보기
-- dump 시점에 안 잡힘 — 호버 이벤트가 액션이 아니라 인식 시점이 까다로움
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-11-screen.png) | ![](images/case-11-dump.png) |
-
----
-
-## Case 12 — 자동 저장 indicator
-
-**한계 분류**: LIMITATIONS §1.10 타이밍 의존
-**보완 Tier**: settle detection (a11y idle event)
-
-### 왜 어려운가
-- "저장됨" 같은 일시적 텍스트가 1~2초 노출
-- dump 시점에 따라 보이거나 안 보임 → 비결정성
-
-### 원본 화면 vs 3D view 비교
-| (1) 원본 Samsung Notes 화면 | (2) android-ui-dump-visualizer 3D view |
-|---|---|
-| ![](images/case-12-screen.png) | ![](images/case-12-dump.png) |
-
----
-
-## Case 13 — 잠금 노트 인증 UI
-
-**한계 분류**: LIMITATIONS §12.5 시스템 영역 무력
-**보완 Tier**: 진입 차단 (DangerousActionGuard)
-
-### 왜 어려운가
-- 잠금 노트는 시스템 인증 (지문/PIN) UI 로 리다이렉트
-- 자동 인증 불가 + 잘못 시도 시 단말 잠김 위험
-- "노트 잠금/잠금 해제" 키워드 진입 자체를 차단해야 안전
-
----
-
-## Case 14 — 자석 그리드 / 가이드라인
-
-**한계 분류**: LIMITATIONS §1.1 Canvas 위 그려짐
-**보완 Tier**: **무시** — 그리기 보조용이고 UI 인터랙션 대상 아님
-
-설명 생략 (탐색 대상 아님).
-
----
-
-## Case 15 — 그리기 영역 동적 콘텐츠 (사용자 stroke)
-
-**한계 분류**: LIMITATIONS §1.9 동적 콘텐츠 + §7 Fingerprint 불안정
-**보완 Tier**: 두 단계 fingerprint (strict + loose)
-
-### 왜 어려운가
-- 사용자가 그린 stroke 가 화면에 남아 있으면 strict fingerprint 가 항상 변함
-- 같은 "그리기 화면" 인데도 매번 신규 노드로 등록 → 무한루프
-
-### 보완 방법
-- strict fingerprint 는 (activity + visible 노드 구조) 만 사용, text/pixel 제외
-- loose fingerprint 는 클러스터링용
-
----
-
-## 종합 — 실측 4 케이스로 본 우선순위
+## 종합 — 실측 5 케이스로 본 우선순위
 
 | 순위 | 보완 항목 | 직접 해결 (실측) | 일반화로 해결 (추정) |
 |---|---|---|---|
