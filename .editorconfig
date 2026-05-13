@@ -1,0 +1,31 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Kotlin / Java — 4 space
+[*.{kt,kts,java}]
+indent_size = 4
+max_line_length = 120
+
+# Python — 4 space (PEP 8)
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+# Gradle wrapper / scripts keep tabs
+[Makefile]
+indent_style = tab
+
+# Markdown — preserve trailing spaces (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Windows batch files
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
