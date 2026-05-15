@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Gradle Wrapper script for POSIX systems.
+# (See `gradlew.bat` for the Windows version.)
+#
+# 본 파일은 자리표시자 — 실제 동작을 위해선 `gradle-wrapper.jar` 가 필요하다.
+# Android Studio 첫 sync 또는 `gradle wrapper` 명령으로 jar 가 자동 생성된다.
+
+PRG="$0"
+SAVED="$(pwd)"
+APP_HOME="$(cd "$(dirname "$PRG")" >/dev/null && pwd -P)"
+cd "$SAVED" >/dev/null
+
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+
+# Determine the Java command to use to start the JVM.
+if [ -n "$JAVA_HOME" ]; then
+    JAVACMD="$JAVA_HOME/bin/java"
+    if [ ! -x "$JAVACMD" ]; then
+        echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME" >&2
+        exit 1
+    fi
+else
+    JAVACMD="java"
+    if ! command -v java >/dev/null 2>&1; then
+        echo "ERROR: JAVA_HOME is not set and 'java' is not in PATH." >&2
+        exit 1
+    fi
+fi
+
+CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+if [ ! -f "$CLASSPATH" ]; then
+    echo "ERROR: gradle-wrapper.jar not found at $CLASSPATH" >&2
+    echo "Run: gradle wrapper --gradle-version 8.11.1" >&2
+    echo "Or open the project in Android Studio for auto-sync." >&2
+    exit 1
+fi
+
+exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS \
+    "-Dorg.gradle.appname=$(basename "$0")" \
+    -classpath "$CLASSPATH" \
+    org.gradle.wrapper.GradleWrapperMain "$@"
