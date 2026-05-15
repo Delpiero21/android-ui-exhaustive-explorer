@@ -4,8 +4,8 @@
 > Accessibility · Pixel Grid · Computer Vision · Differential Probe · VLM 다섯 계층을 결합해
 > 단일 기법으로는 닿지 못하는 사각지대까지 audit-가능한 형태로 보고한다.
 
-[![status](https://img.shields.io/badge/status-bootstrap-orange)]()
-[![phase](https://img.shields.io/badge/phase-0-blue)]()
+[![status](https://img.shields.io/badge/status-phase%200%20bootstrap%20complete-green)]()
+[![phase](https://img.shields.io/badge/phase-0%20%E2%9C%93-blue)]()
 [![target](https://img.shields.io/badge/target-One%20UI%208.5%20%2F%20S26-black)]()
 
 ---
@@ -42,19 +42,26 @@ android-ui-exhaustive-explorer/
 
 ---
 
-## 빠른 시작 (예정)
-
-> Phase 0 (Bootstrap) 진행 중. 아래 명령은 향후 단계에서 동작.
+## 빠른 시작
 
 ```powershell
-# Android APK 빌드 + 설치
+# 사전: server 의존성, web 의존성 한 번만 설치
+cd server; python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e ".[dev]"; deactivate; cd ..
+cd web;    npm install; cd ..
+
+# 서버 + 웹 + adb reverse 한 번에 (각각 새 창)
+.\scripts\dev.ps1
+# → server  http://127.0.0.1:8000  (`/api/health` 동작)
+# → web     http://localhost:5173   (헬스 badge 표시)
+
+# Android APK — Android Studio 에서 android/ 폴더 열고 Run
+# (CLI 빌드 원하면 한 번 sync 후)
 cd android
 .\gradlew :app:assembleDebug
 adb install -r app\build\outputs\apk\debug\app-debug.apk
-
-# 서버 + 웹 + adb reverse 한 번에
-.\scripts\dev.ps1
 ```
+
+자세한 셋업·환경 변수: [`scripts/README.md`](scripts/README.md), [`android/README.md`](android/README.md), [`server/README.md`](server/README.md), [`web/README.md`](web/README.md).
 
 ---
 
