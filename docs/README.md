@@ -14,6 +14,7 @@
 | [`COUNTERMEASURES.md`](COUNTERMEASURES.md) | 한계별 극복 방안 + 우선순위 (한계 영역 / 극복 방안 / 비고) | 개발자, 로드맵 의사결정 | 월~분기 |
 | [`ROADMAP.md`](ROADMAP.md) | Phase 0~3 단계별 산출물·완료 기준 | 팀, 보고 | Phase 진입/종료 시 |
 | [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) | Samsung Notes 실측 검증 (5 케이스, 가설은 신규 캡처 시 추가) | 개발자, 보고 | 신규 캡처 시 |
+| [`RELATED_WORK.md`](RELATED_WORK.md) | 학계 / 산업계 비교 + 본 프로젝트의 위치 + LIMITATIONS × 학술 매핑 | 팀장 보고, 신규 합류자 | 분기 1 회 |
 | [`report.html`](report.html) | 한눈에 보는 대시보드 (보고용) | 팀장·매니저 발표 | LIMITATIONS/COUNTERMEASURES 갱신 시 |
 
 ---
@@ -46,12 +47,15 @@
 1. [`../README.md`](../README.md) — 프로젝트 한 줄 + 디렉토리 구조
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — 5-Tier 가 무엇이고 왜 그렇게 쌓았는가
 3. [`LIMITATIONS.md`](LIMITATIONS.md) → [`COUNTERMEASURES.md`](COUNTERMEASURES.md) — 왜 이렇게 만들었나
-4. [`ROADMAP.md`](ROADMAP.md) — 어디까지 했고 어디로 가는가
+4. [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) — 실측 5 케이스로 어떤 사각지대가 있는지 확인
+5. [`RELATED_WORK.md`](RELATED_WORK.md) — 학계 배경. §8 reading list 로 ~3.5 시간에 도메인 이해
+6. [`ROADMAP.md`](ROADMAP.md) — 어디까지 했고 어디로 가는가
 
 ### 📊 팀장·매니저 보고 준비
 1. [`report.html`](report.html) — 한 페이지 대시보드 (브라우저로 발표)
 2. [`LIMITATIONS.md`](LIMITATIONS.md) — 문제 정의 깊이 설명 시
 3. [`COUNTERMEASURES.md`](COUNTERMEASURES.md) §우선순위 — 다음 분기 계획 인용
+4. [`RELATED_WORK.md`](RELATED_WORK.md) §7 — 학계 대비 차별성 ("왜 이게 필요한가" 설득)
 
 ### 🛠 새 기능 추가 의사결정
 1. [`LIMITATIONS.md`](LIMITATIONS.md) 에서 해당 영역 사각지대 확인
@@ -69,4 +73,6 @@
 | LIMITATIONS | 개발자 | OS 업그레이드 / 신규 사각지대 발견 시 |
 | COUNTERMEASURES | 개발자 | 신규 기법 도입 검토 시 / Phase 완료 시 |
 | ROADMAP | 리드 | Phase 진입·완료 시 |
-| report.html | 위 4개 중 하나 갱신될 때마다 동기화 |
+| RELATED_WORK | 리드 | 분기 1 회 + 본 도구 Phase 전환 시 §6 매핑 갱신 |
+| SAMSUNG_NOTES_HARD_CASES | 개발자 | 신규 케이스 캡처 시 |
+| report.html | 위 갱신될 때마다 동기화 |
