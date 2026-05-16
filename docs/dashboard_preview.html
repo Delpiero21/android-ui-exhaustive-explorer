@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UI Exhaustive Explorer · Dashboard Preview</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f2f3f3;
+  --bg-card: #ffffff;
+  --bg-header: #232f3e;
+  --text-primary: #16191f;
+  --text-secondary: #545b64;
+  --text-tertiary: #879596;
+  --border-primary: #d5dbdb;
+  --border-soft: #e0e3e7;
+  --accent-primary: #ec7211;
+  --accent-secondary: #0073bb;
+  --status-ok: #1d8102;
+  --status-down: #dc2c42;
+  --status-loading: #f5a623;
+  --status-completed: #1d8102;
+  --status-progress: #ec7211;
+  --status-planned: #879596;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{font-family:"Pretendard Variable","Pretendard",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);-webkit-font-smoothing:antialiased;line-height:1.6;letter-spacing:-0.3px}
+code{font-family:"Consolas","Menlo",monospace;font-size:0.92em;background:#f2f3f3;padding:1px 5px;border-radius:3px}
+.page{min-height:100vh;display:flex;flex-direction:column}
+.content{padding:32px 40px;max-width:1300px;margin:0 auto;width:100%}
+
+/* Header */
+.header{background:var(--bg-header);height:56px;padding:0 40px;display:flex;align-items:center;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;color:#fff}
+.brand-mark{width:28px;height:28px;border-radius:4px;background:var(--accent-primary);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}
+.brand-name{font-weight:700;font-size:15px;letter-spacing:-0.5px}
+.nav-tabs{display:flex;gap:0;margin-left:16px}
+.nav-tab{background:transparent;border:none;color:rgba(255,255,255,0.7);padding:0 16px;height:36px;font-size:13px;font-weight:600;cursor:pointer;border-radius:4px;font-family:inherit;letter-spacing:-0.3px}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.nav-tab.active{color:var(--accent-primary);background:rgba(236,114,17,0.12)}
+.health-badge{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,0.06)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--status-ok)}
+
+/* Hero */
+.hero{flex:1;padding:80px 40px;background:linear-gradient(135deg,#ffffff 0%,#e8f4f8 25%,#f0e6ff 50%,#e0f7f0 75%,#ffffff 100%);background-size:400% 400%;animation:heroGradient 14s ease infinite}
+@keyframes heroGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.hero-inner{max-width:1100px;margin:0 auto}
+.phase-pill{display:inline-block;font-size:12px;font-weight:700;color:var(--accent-primary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;padding:4px 14px;border:1px solid rgba(236,114,17,0.25);border-radius:20px;background:rgba(236,114,17,0.05)}
+.hero h1{font-size:38px;font-weight:800;line-height:1.18;letter-spacing:-1.2px;margin-bottom:16px}
+.lead{font-size:16px;color:var(--text-secondary);line-height:1.7;max-width:720px;margin-bottom:12px}
+.muted{color:var(--text-tertiary)}
+.muted.small{font-size:13px}
+.small{font-size:13px}
+
+/* Common */
+.page-title{font-size:28px;font-weight:800;letter-spacing:-0.8px;margin-bottom:8px}
+.empty-card{border:1px dashed var(--border-primary);border-radius:8px;padding:32px;text-align:center;background:var(--bg-secondary);color:var(--text-secondary)}
+
+/* Runs */
+.runs-layout{display:grid;grid-template-columns:360px 1fr;gap:24px;margin-top:16px}
+.runs-list{display:flex;flex-direction:column;gap:10px}
+.run-card{text-align:left;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;padding:14px 16px;cursor:pointer;font-family:inherit;transition:border-color 0.15s,box-shadow 0.15s;width:100%}
+.run-card:hover{border-color:var(--accent-secondary)}
+.run-card.selected{border-color:var(--accent-primary);box-shadow:0 0 0 1px var(--accent-primary)}
+.run-card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.run-id{font-weight:700;font-size:14px;letter-spacing:-0.2px}
+.run-duration{font-size:12px;color:var(--text-tertiary)}
+.run-pkg{margin-bottom:8px}
+.run-stats-row{display:flex;gap:14px}
+.stat-cell{display:flex;flex-direction:column;gap:2px}
+.stat-value{font-weight:700;font-size:14px}
+.stat-label{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px}
+.run-detail{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;padding:20px 24px;min-height:400px}
+.detail-content h3{font-size:20px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px}
+.detail-content h4{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin:20px 0 10px}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.detail-field{background:var(--bg-secondary);border-radius:6px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.detail-label{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px}
+.detail-value{font-weight:600;font-size:14px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.stat-grid .stat-cell{background:var(--bg-secondary);border-radius:6px;padding:10px 14px}
+.bar-list{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:grid;grid-template-columns:120px 1fr 40px;align-items:center;gap:10px}
+.bar-label{font-size:12px;font-weight:600}
+.bar-track{background:var(--bg-secondary);border-radius:3px;height:12px;overflow:hidden}
+.bar-fill{background:var(--accent-primary);height:100%;transition:width 0.3s}
+.bar-count{font-size:12px;text-align:right;color:var(--text-tertiary)}
+.screens-list{list-style:none;padding-left:0;display:flex;flex-direction:column;gap:4px}
+.screens-list li{padding:4px 0;border-bottom:1px dotted var(--border-soft)}
+
+/* Phase */
+.comparison-table-wrap{overflow-x:auto;margin:16px 0 32px}
+.comparison-table{width:100%;border-collapse:collapse;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;overflow:hidden}
+.comparison-table thead th{background:var(--bg-secondary);padding:12px 14px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);border-bottom:1px solid var(--border-primary)}
+.comparison-table tbody td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border-soft)}
+.comparison-table tbody tr:last-child td{border-bottom:none}
+.metric-name{font-weight:600}
+.actual{color:var(--status-completed);font-weight:600}
+.tbd{color:var(--text-tertiary)}
+.phase-cards{display:flex;flex-direction:column;gap:16px}
+.phase-card{background:var(--bg-card);border:1px solid var(--border-primary);border-left:4px solid var(--border-primary);border-radius:8px;padding:20px 24px}
+.phase-card.status-completed{border-left-color:var(--status-completed)}
+.phase-card.status-progress{border-left-color:var(--status-progress)}
+.phase-card.status-planned{border-left-color:var(--status-planned)}
+.phase-card-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.phase-num{font-size:12px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px}
+.phase-name{font-size:18px;font-weight:800;letter-spacing:-0.4px}
+.phase-badge{margin-left:auto;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:0.5px}
+.phase-badge.status-completed{background:#e8f5ec;color:var(--status-completed)}
+.phase-badge.status-progress{background:#fef3e0;color:var(--accent-primary)}
+.phase-badge.status-planned{background:#f2f3f3;color:var(--text-tertiary)}
+.io-block,.coverage-block,.limit-block,.tech-block,.cases-block{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-soft)}
+.io-block strong,.coverage-block strong,.limit-block strong,.tech-block strong,.cases-block strong{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-tertiary);display:block;margin-bottom:6px}
+.io-row{display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:baseline;margin-bottom:4px}
+.io-label{font-size:11px;font-weight:700;background:var(--bg-secondary);border-radius:3px;padding:2px 6px;text-align:center;color:var(--accent-secondary)}
+.coverage-block ul,.limit-block ul,.cases-block ul{list-style:none;padding-left:12px;display:flex;flex-direction:column;gap:4px}
+.coverage-block li,.limit-block li,.cases-block li{position:relative;padding-left:12px}
+.coverage-block li::before,.cases-block li::before{content:'·';position:absolute;left:0;color:var(--accent-primary);font-weight:900}
+.limit-block li::before{content:'✗';position:absolute;left:0;color:var(--status-down);font-weight:700}
+.tech-tags{display:flex;flex-wrap:wrap;gap:6px}
+.tech-tag{font-size:11px;font-weight:600;background:#f2f3f3;border:1px solid var(--border-soft);border-radius:4px;padding:3px 10px;color:var(--text-secondary)}
+.tech-tag.candidate{background:rgba(0,115,187,0.06);border-color:rgba(0,115,187,0.2);color:var(--accent-secondary)}
+
+.preview-banner{background:linear-gradient(90deg,rgba(236,114,17,0.08),rgba(0,115,187,0.08));border:1px solid rgba(236,114,17,0.25);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--text-secondary);margin-bottom:18px}
+.preview-banner strong{color:var(--accent-primary)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+@media (max-width:900px){
+  .runs-layout{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+  .content{padding:20px}
+  .header{padding:0 20px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="header">
+  <div class="brand">
+    <span class="brand-mark">EX</span>
+    <span class="brand-name">UI Exhaustive Explorer</span>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="home">Home</button>
+    <button class="nav-tab" data-tab="runs">Runs</button>
+    <button class="nav-tab" data-tab="phase">Phase</button>
+  </nav>
+  <div class="health-badge">
+    <span class="dot"></span>
+    <span>server 0.1.0 · 1-autonomous</span>
+  </div>
+</header>
+
+<!-- ────── HOME ────── -->
+<div class="tab-content active" data-tab-pane="home">
+  <main class="hero">
+    <div class="hero-inner">
+      <div class="phase-pill">Phase 1 · Autonomous DFS</div>
+      <h1>android-ui-exhaustive-explorer</h1>
+      <p class="lead">
+        모바일 단말 preload 앱의 UI 표면을 자동으로 완전탐색하는 도구.
+        Accessibility · Pixel Grid · CV + OCR · Differential Probe · VLM
+        다섯 계층을 결합해 단일 기법으로는 닿지 못하는 사각지대까지 audit-가능한 형태로 보고한다.
+      </p>
+      <p class="muted">
+        <strong>Runs</strong> 탭 — 단말에서 회수된 자율 탐색 결과.<br/>
+        <strong>Phase</strong> 탭 — 본 도구가 지금 무엇이 되고 안 되는지 (PHASE_LOG mirror).
+      </p>
+    </div>
+  </main>
+</div>
+
+<!-- ────── RUNS ────── -->
+<div class="tab-content" data-tab-pane="runs">
+  <main class="content">
+    <h2 class="page-title">Runs</h2>
+    <p class="muted small">단말에서 회수된 자율 탐색 run 결과. <code>scripts/pull_runs.ps1</code> 실행 후 새로고침.</p>
+    <div class="preview-banner">
+      <strong>★ Preview 모드</strong> — 본 페이지는 sample 데이터로 렌더된 디자인 미리보기.
+      실제 동작은 npm/server 기동 후 <code>http://localhost:5173</code> 의 Runs 탭에서.
+    </div>
+    <div class="runs-layout">
+      <div class="runs-list" id="runs-list"></div>
+      <div class="run-detail" id="run-detail"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ────── PHASE ────── -->
+<div class="tab-content" data-tab-pane="phase">
+  <main class="content">
+    <h2 class="page-title">Phase Progress</h2>
+    <p class="muted small">본 페이지는 <code>data/phase_log.json</code> (= <code>docs/PHASE_LOG.md</code> mirror) 의 실시간 렌더. 마지막 갱신: 2026-05-16</p>
+
+    <h3 style="margin-top:18px;margin-bottom:8px;font-size:18px;font-weight:700">한눈에 진화 보기</h3>
+    <div class="comparison-table-wrap">
+      <table class="comparison-table">
+        <thead>
+          <tr><th>지표</th><th>P0</th><th>P1 목표</th><th>P1 실측</th><th>P2 목표</th><th>P3 목표</th><th>천장</th></tr>
+        </thead>
+        <tbody id="comparison-body"></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;margin-bottom:8px;font-size:18px;font-weight:700">Phase 별 상세</h3>
+    <div class="phase-cards" id="phase-cards"></div>
+  </main>
+</div>
+
+</div>
+
+<script>
+// ─────────── tab navigation ───────────
+document.querySelectorAll('.nav-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`[data-tab-pane="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// ─────────── sample run data ───────────
+const sampleRuns = [
+  {
+    run_id: "20260516_104500",
+    target_pkg: "com.samsung.android.app.notes",
+    duration_sec: 60.0,
+    duration_ms: 60000,
+    started_at: 1747432800000,
+    ended_at: 1747432860000,
+    device: { model: "SM-S947U1", sdk: 36 },
+    stats: { new_screens: 14, actions_executed: 38, edges_recorded: 38, hot_edges: 24, cold_edges: 14, hot_pct: 63.2, guard_blocks: 3, evacuates: 0, dialogs_dismissed: 2, actions_per_sec: 0.63 },
+    has_screenshots: true,
+    eventTypes: { new_screen: 14, action: 38, edge: 38, guard_block: 3, dialog_dismiss: 2, run_start: 1, run_end: 1 },
+    newScreensTimeline: [
+      { offset: 0.5, fp: "a3f5b1c8", pkg: "com.samsung.android.app.notes", candidates: 28 },
+      { offset: 2.1, fp: "b7d1e2f0", pkg: "com.samsung.android.app.notes", candidates: 24 },
+      { offset: 4.3, fp: "c9e2f3a1", pkg: "com.samsung.android.honeyboard", candidates: 74 },
+      { offset: 6.8, fp: "d1f3a4b2", pkg: "com.samsung.android.app.notes", candidates: 18 },
+      { offset: 9.2, fp: "e2a4b5c3", pkg: "com.samsung.android.app.notes", candidates: 33 },
+      { offset: 12.5, fp: "f3b5c6d4", pkg: "com.samsung.android.app.notes", candidates: 12 },
+      { offset: 15.7, fp: "a4c6d7e5", pkg: "com.samsung.android.app.notes", candidates: 22 },
+      { offset: 19.1, fp: "b5d7e8f6", pkg: "com.samsung.android.app.notes", candidates: 17 },
+      { offset: 23.4, fp: "c6e8f9a7", pkg: "com.samsung.android.app.notes", candidates: 9 },
+      { offset: 28.0, fp: "d7f9a0b8", pkg: "com.samsung.android.app.notes", candidates: 31 },
+      { offset: 33.2, fp: "e8a0b1c9", pkg: "com.samsung.android.app.notes", candidates: 15 },
+      { offset: 39.5, fp: "f9b1c2d0", pkg: "com.samsung.android.app.notes", candidates: 26 },
+      { offset: 46.1, fp: "a0c2d3e1", pkg: "com.samsung.android.app.notes", candidates: 11 },
+      { offset: 53.7, fp: "b1d3e4f2", pkg: "com.samsung.android.app.notes", candidates: 20 },
+    ],
+  },
+  {
+    run_id: "20260516_103000",
+    target_pkg: "com.samsung.android.app.notes",
+    duration_sec: 30.5,
+    duration_ms: 30500,
+    started_at: 1747431800000,
+    ended_at: 1747431830500,
+    device: { model: "SM-S947U1", sdk: 36 },
+    stats: { new_screens: 7, actions_executed: 18, edges_recorded: 18, hot_edges: 11, cold_edges: 7, hot_pct: 61.1, guard_blocks: 1, evacuates: 0, dialogs_dismissed: 0, actions_per_sec: 0.59 },
+    has_screenshots: false,
+    eventTypes: { new_screen: 7, action: 18, edge: 18, guard_block: 1, run_start: 1, run_end: 1 },
+    newScreensTimeline: [
+      { offset: 0.6, fp: "a3f5b1c8", pkg: "com.samsung.android.app.notes", candidates: 28 },
+      { offset: 3.4, fp: "b7d1e2f0", pkg: "com.samsung.android.app.notes", candidates: 24 },
+      { offset: 7.2, fp: "c8e2f3a1", pkg: "com.samsung.android.app.notes", candidates: 21 },
+      { offset: 12.0, fp: "d9f3a4b2", pkg: "com.samsung.android.app.notes", candidates: 14 },
+      { offset: 17.5, fp: "e0a4b5c3", pkg: "com.samsung.android.app.notes", candidates: 19 },
+      { offset: 22.8, fp: "f1b5c6d4", pkg: "com.samsung.android.app.notes", candidates: 8 },
+      { offset: 28.3, fp: "a2c6d7e5", pkg: "com.samsung.android.app.notes", candidates: 16 },
+    ],
+  },
+];
+
+// ─────────── render runs list ───────────
+const runsList = document.getElementById("runs-list");
+const runDetail = document.getElementById("run-detail");
+let selectedRunId = sampleRuns[0].run_id;
+
+function renderRunsList() {
+  runsList.innerHTML = sampleRuns.map(r => `
+    <button class="run-card ${r.run_id === selectedRunId ? "selected" : ""}" data-run="${r.run_id}">
+      <div class="run-card-head">
+        <span class="run-id">${r.run_id}</span>
+        <span class="run-duration">${r.duration_sec.toFixed(1)}s</span>
+      </div>
+      <div class="run-pkg small muted">${r.target_pkg}</div>
+      <div class="run-stats-row">
+        <div class="stat-cell"><span class="stat-value">${r.stats.new_screens}</span><span class="stat-label">화면</span></div>
+        <div class="stat-cell"><span class="stat-value">${r.stats.actions_executed}</span><span class="stat-label">액션</span></div>
+        <div class="stat-cell"><span class="stat-value">${r.stats.hot_pct.toFixed(0)}%</span><span class="stat-label">HOT</span></div>
+        <div class="stat-cell"><span class="stat-value">${r.stats.guard_blocks}</span><span class="stat-label">차단</span></div>
+      </div>
+    </button>
+  `).join("");
+  document.querySelectorAll(".run-card").forEach(c => {
+    c.addEventListener("click", () => { selectedRunId = c.dataset.run; renderRunsList(); renderRunDetail(); });
+  });
+}
+
+function renderRunDetail() {
+  const r = sampleRuns.find(x => x.run_id === selectedRunId);
+  if (!r) { runDetail.innerHTML = '<div class="empty-card">왼쪽에서 run 을 선택하세요.</div>'; return; }
+  const totalEvents = Object.values(r.eventTypes).reduce((a, b) => a + b, 0);
+  runDetail.innerHTML = `
+    <div class="detail-content">
+      <h3>${r.run_id}</h3>
+      <div class="detail-grid">
+        <div class="detail-field"><span class="detail-label">Target</span><span class="detail-value">${r.target_pkg}</span></div>
+        <div class="detail-field"><span class="detail-label">Duration</span><span class="detail-value">${r.duration_sec.toFixed(1)}s</span></div>
+        <div class="detail-field"><span class="detail-label">Device</span><span class="detail-value">${r.device.model} (SDK ${r.device.sdk})</span></div>
+      </div>
+
+      <h4>통계</h4>
+      <div class="stat-grid">
+        ${stat("발견 화면", r.stats.new_screens)}
+        ${stat("시도 액션", r.stats.actions_executed)}
+        ${stat("엣지", r.stats.edges_recorded)}
+        ${stat("HOT", r.stats.hot_edges)}
+        ${stat("COLD", r.stats.cold_edges)}
+        ${stat("HOT %", r.stats.hot_pct.toFixed(1) + "%")}
+        ${stat("차단된 액션", r.stats.guard_blocks)}
+        ${stat("대피", r.stats.evacuates)}
+        ${stat("dialog 처리", r.stats.dialogs_dismissed)}
+        ${stat("액션/초", r.stats.actions_per_sec.toFixed(2))}
+      </div>
+
+      <h4>이벤트 분포</h4>
+      <div class="bar-list">
+        ${Object.entries(r.eventTypes).sort((a, b) => b[1] - a[1]).map(([k, v]) => `
+          <div class="bar-row">
+            <span class="bar-label">${k}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, (v / totalEvents) * 100)}%"></div></div>
+            <span class="bar-count">${v}</span>
+          </div>
+        `).join("")}
+      </div>
+
+      <h4>발견 화면 (${r.newScreensTimeline.length})</h4>
+      <ul class="screens-list">
+        ${r.newScreensTimeline.map(s => `
+          <li class="small">
+            <span class="muted">+${s.offset.toFixed(1)}s</span>
+            — <code>${s.fp}</code>
+            <span class="muted">${s.pkg}</span>
+            <span class="muted">candidates=${s.candidates}</span>
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function stat(label, value) {
+  return `<div class="stat-cell"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></div>`;
+}
+
+// ─────────── sample phase data ───────────
+const phaseLog = {
+  last_updated: "2026-05-16",
+  phases: [
+    {
+      id: 0, name: "Bootstrap", status: "completed", commits: 8,
+      io: { input: "(없음 — setup)", processing: "Gradle/Compose/FastAPI/Vite 스캐폴드 + 문서 8 종 + 실측 5 케이스", output: "빈 APK + 문서 + scripts" },
+      coverage: { build_ok: true, activity_coverage_pct: 0, screens_found: 0, doc_completeness_pct: 100, measured_cases: "5/15" },
+      limitations: ["실제 UI 탐색 — 코드 0", "데이터 저장 미구현", "Server↔Android push 없음"],
+      tech_stack: ["Gradle 8.11.1", "Kotlin 2.0.21", "Compose BOM 2024.12.01", "FastAPI 0.115", "Vite 5 + React 18", "Pretendard"],
+    },
+    {
+      id: 1, name: "Autonomous DFS", status: "completed", commits: 4,
+      io: { input: "AccessibilityEvent + getWindows() + target package + budget", processing: "MultiWindowCollector → NodeTraversal → Fingerprint(strict+loose) → StateGraph → Guard → Gesture → Probe", output: "StateGraph + RunRecorder events.jsonl + summary.json" },
+      coverage: { activity_coverage: "40~55% (목표) / TBD (실측)", screens_target: "≥10", multi_window_resolved: "3건 (Case 1/6/10)", external_egress: 0 },
+      limitations: ["Tier 2/3/5 미구현", "NodeInfoCache 없음 (좌표 fallback 만)", "Server snapshot push 미구현", "빌드 검증 일요일"],
+      tech_stack: ["AccessibilityService.getWindows() ⭐", "dispatchGesture + GestureDescription", "takeScreenshot (API 30+)", "kotlinx-coroutines 1.9", "ReentrantReadWriteLock", "MessageDigest SHA-256", "Normalizer.Form.NFC", "Compose Material3 + StateFlow"],
+      resolved_cases: [{ case: 1, title: "SIP 키보드", via: "MultiWindowCollector" }, { case: 6, title: "텍스트 ActionMode", via: "MultiWindowCollector" }, { case: 10, title: "AI 어시스트 팝업", via: "MultiWindowCollector" }],
+    },
+    {
+      id: 2, name: "Blind Spot 보완", status: "planned",
+      io: { input: "Phase 1 + 스크린샷 비트맵", processing: "+ Tier 2 PixelGrid + Tier 3 CV/OCR + Tier 5 VLM(on-device) + NodeInfoCache + server push", output: "+ Tier 별 hit 기여도 + web 실시간 시각화" },
+      coverage: { activity_coverage_target: "55~70%", canvas_candidate_target: "≥30%", color_label: "9 색 + 휠 라벨", external_egress: 0 },
+      tech_stack_candidates: ["TFLite SSDLite", "OpenCV", "ML Kit Text Recognition (Korean)", "Gemini Nano (AICore) 또는 Gemma 2 2B (MediaPipe)", "OkHttp / HttpURLConnection"],
+    },
+    {
+      id: 3, name: "System 연계", status: "planned",
+      io: { input: "Phase 2 + dumpsys + WindowManagerGlobal reflection", processing: "+ dumpsys 파서 + logcat 매핑 + Compose semantics + Jaccard 정합성", output: "+ 시스템 ground-truth 비교 + 회귀 시계열" },
+      coverage: { activity_coverage_target: "65~75%", ground_truth_consistency_target: "≥90%", regression_tracking: true },
+      tech_stack_candidates: ["Runtime.exec(\"dumpsys\")", "WindowManagerGlobal reflection", "SQLite (Room)", "Jaccard similarity"],
+    },
+  ],
+  comparison_table: {
+    indicators: [
+      { metric: "Activity coverage", p0: "0%", p1_target: "40~55%", p1_actual: null, p2_target: "55~70%", p3_target: "65~75%", ceiling: "~80%" },
+      { metric: "발견 화면 (60s)", p0: "0", p1_target: "≥10", p1_actual: null, p2_target: "≥15", p3_target: "≥20" },
+      { metric: "Canvas 후보 발견율", p0: "0%", p1_target: "0%", p2_target: "≥30%", p3_target: "≥50%" },
+      { metric: "시각 속성 식별 (색깔)", p0: "불가능", p1_target: "불가능", p2_target: "9 색+휠 라벨", p3_target: "동일" },
+      { metric: "외부 통신 의존", p0: "0", p1_target: "0", p2_target: "0 (온디바이스)", p3_target: "0" },
+      { metric: "다중 윈도우 해결", p0: "0건", p1_target: "3건 (1/6/10)", p2_target: "3건", p3_target: "3건" },
+      { metric: "Server↔Android 연동", p0: "scaffold", p1_target: "스냅샷 파일", p2_target: "snapshot HTTP push", p3_target: "+ 정합성 KPI" },
+    ],
+  },
+};
+
+// ─────────── render comparison table ───────────
+document.getElementById("comparison-body").innerHTML = phaseLog.comparison_table.indicators.map(i => `
+  <tr>
+    <td class="metric-name">${i.metric}</td>
+    <td>${i.p0 ?? "—"}</td>
+    <td>${i.p1_target ?? "—"}</td>
+    <td class="${i.p1_actual ? "actual" : "tbd"}">${i.p1_actual ?? '<span class="muted">TBD</span>'}</td>
+    <td>${i.p2_target ?? "—"}</td>
+    <td>${i.p3_target ?? "—"}</td>
+    <td class="muted">${i.ceiling ?? "—"}</td>
+  </tr>
+`).join("");
+
+// ─────────── render phase cards ───────────
+function renderPhaseCard(p) {
+  const statusClass = p.status === "completed" ? "status-completed" : p.status === "in_progress" ? "status-progress" : "status-planned";
+  const badge = p.status === "completed" ? "✅ 완료" : p.status === "in_progress" ? "● 진행 중" : "⏳ 계획";
+  return `
+    <div class="phase-card ${statusClass}">
+      <div class="phase-card-head">
+        <span class="phase-num">Phase ${p.id}</span>
+        <span class="phase-name">${p.name}</span>
+        <span class="phase-badge ${statusClass}">${badge}</span>
+      </div>
+      ${p.io ? `
+        <div class="io-block">
+          <strong>I/O</strong>
+          <div class="io-row"><span class="io-label">In</span><span>${p.io.input}</span></div>
+          <div class="io-row"><span class="io-label">Proc</span><span>${p.io.processing}</span></div>
+          <div class="io-row"><span class="io-label">Out</span><span>${p.io.output}</span></div>
+        </div>
+      ` : ""}
+      ${p.coverage ? `
+        <div class="coverage-block">
+          <strong>Coverage</strong>
+          <ul class="small">
+            ${Object.entries(p.coverage).filter(([k,v])=>!k.startsWith("_") && v!==undefined).map(([k,v])=>`<li><code>${k}</code>: ${v === null ? '<span class="muted">TBD</span>' : '<code>'+String(v)+'</code>'}</li>`).join("")}
+          </ul>
+        </div>
+      ` : ""}
+      ${p.limitations ? `
+        <div class="limit-block">
+          <strong>실패한 부분 / 못 한 것</strong>
+          <ul class="small">${p.limitations.map(l=>`<li>${l}</li>`).join("")}</ul>
+        </div>
+      ` : ""}
+      ${(p.tech_stack || p.tech_stack_candidates) ? `
+        <div class="tech-block">
+          <strong>기술 스택${p.tech_stack_candidates ? " (후보)" : ""}</strong>
+          <div class="tech-tags">${(p.tech_stack || p.tech_stack_candidates).map(t=>`<span class="tech-tag${p.tech_stack_candidates ? " candidate" : ""}">${t}</span>`).join("")}</div>
+        </div>
+      ` : ""}
+      ${p.resolved_cases ? `
+        <div class="cases-block">
+          <strong>해결된 사각지대</strong>
+          <ul class="small">${p.resolved_cases.map(c=>`<li><strong>Case ${c.case}</strong> ${c.title} <span class="muted">← ${c.via}</span></li>`).join("")}</ul>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+document.getElementById("phase-cards").innerHTML = phaseLog.phases.map(renderPhaseCard).join("");
+
+// ─────────── initial render ───────────
+renderRunsList();
+renderRunDetail();
+</script>
+</body>
+</html>
