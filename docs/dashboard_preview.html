@@ -94,6 +94,31 @@ code{font-family:"Consolas","Menlo",monospace;font-size:0.92em;background:#f2f3f
 .screens-list{list-style:none;padding-left:0;display:flex;flex-direction:column;gap:4px}
 .screens-list li{padding:4px 0;border-bottom:1px dotted var(--border-soft)}
 
+/* Screens gallery */
+.screens-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:8px}
+.screen-thumb{display:flex;flex-direction:column;gap:6px;background:var(--bg-secondary);border:1px solid var(--border-soft);border-radius:6px;padding:6px;cursor:pointer;font-family:inherit;transition:border-color 0.15s,transform 0.15s}
+.screen-thumb:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
+.screen-thumb-img-wrap{position:relative;aspect-ratio:9/19;background:var(--bg-card);border-radius:4px;overflow:hidden}
+.screen-thumb-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.thumb-placeholder{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--text-tertiary);font-size:11px;background:var(--bg-card)}
+.thumb-index{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.65);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;letter-spacing:0.3px}
+.thumb-meta{display:flex;flex-direction:column;gap:2px;font-size:11px;text-align:center}
+.thumb-meta code{font-size:10px;padding:0;background:transparent}
+
+/* State graph */
+.state-graph-wrap{background:var(--bg-secondary);border:1px solid var(--border-soft);border-radius:8px;padding:16px;overflow-x:auto}
+.state-graph-svg .graph-node:hover rect{stroke:var(--accent-primary);stroke-width:2}
+
+/* Zoom overlay */
+.zoom-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:32px;cursor:zoom-out}
+.zoom-overlay.active{display:flex}
+.zoom-content{position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:default}
+.zoom-img{max-width:100%;max-height:80vh;border-radius:6px;box-shadow:0 12px 48px rgba(0,0,0,0.4)}
+.zoom-close{position:absolute;top:-36px;right:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px}
+.zoom-close:hover{background:rgba(255,255,255,0.25)}
+.zoom-caption{color:#fff;font-size:13px;background:rgba(255,255,255,0.1);padding:6px 14px;border-radius:4px}
+.zoom-caption code{color:#fff;background:transparent;padding:0}
+
 /* Phase */
 .comparison-table-wrap{overflow-x:auto;margin:16px 0 32px}
 .comparison-table{width:100%;border-collapse:collapse;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:8px;overflow:hidden}
@@ -215,6 +240,15 @@ code{font-family:"Consolas","Menlo",monospace;font-size:0.92em;background:#f2f3f
   </main>
 </div>
 
+<!-- ────── Zoom overlay ────── -->
+<div class="zoom-overlay" id="zoom-overlay" onclick="closeZoom()">
+  <div class="zoom-content" onclick="event.stopPropagation()">
+    <button class="zoom-close" onclick="closeZoom()">✕</button>
+    <img id="zoom-img" class="zoom-img" alt="screen" />
+    <div class="zoom-caption"><code id="zoom-caption"></code></div>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -242,11 +276,11 @@ const sampleRuns = [
     has_screenshots: true,
     eventTypes: { new_screen: 14, action: 38, edge: 38, guard_block: 3, dialog_dismiss: 2, run_start: 1, run_end: 1 },
     newScreensTimeline: [
-      { offset: 0.5, fp: "a3f5b1c8", pkg: "com.samsung.android.app.notes", candidates: 28 },
-      { offset: 2.1, fp: "b7d1e2f0", pkg: "com.samsung.android.app.notes", candidates: 24 },
-      { offset: 4.3, fp: "c9e2f3a1", pkg: "com.samsung.android.honeyboard", candidates: 74 },
-      { offset: 6.8, fp: "d1f3a4b2", pkg: "com.samsung.android.app.notes", candidates: 18 },
-      { offset: 9.2, fp: "e2a4b5c3", pkg: "com.samsung.android.app.notes", candidates: 33 },
+      { offset: 0.5, fp: "a3f5b1c8", pkg: "com.samsung.android.app.notes", candidates: 28, image: "images/case-02-screen.png" },
+      { offset: 2.1, fp: "b7d1e2f0", pkg: "com.samsung.android.app.notes", candidates: 24, image: "images/case-10-screen.png" },
+      { offset: 4.3, fp: "c9e2f3a1", pkg: "com.samsung.android.honeyboard", candidates: 74, image: "images/case-01-screen.png" },
+      { offset: 6.8, fp: "d1f3a4b2", pkg: "com.samsung.android.app.notes", candidates: 18, image: "images/case-04-screen.png" },
+      { offset: 9.2, fp: "e2a4b5c3", pkg: "com.samsung.android.app.notes", candidates: 33, image: "images/case-06-screen.png" },
       { offset: 12.5, fp: "f3b5c6d4", pkg: "com.samsung.android.app.notes", candidates: 12 },
       { offset: 15.7, fp: "a4c6d7e5", pkg: "com.samsung.android.app.notes", candidates: 22 },
       { offset: 19.1, fp: "b5d7e8f6", pkg: "com.samsung.android.app.notes", candidates: 17 },
@@ -256,6 +290,21 @@ const sampleRuns = [
       { offset: 39.5, fp: "f9b1c2d0", pkg: "com.samsung.android.app.notes", candidates: 26 },
       { offset: 46.1, fp: "a0c2d3e1", pkg: "com.samsung.android.app.notes", candidates: 11 },
       { offset: 53.7, fp: "b1d3e4f2", pkg: "com.samsung.android.app.notes", candidates: 20 },
+    ],
+    hotEdges: [
+      { from: "a3f5b1c8", to: "b7d1e2f0", action: "노트 어시스트" },
+      { from: "b7d1e2f0", to: "c9e2f3a1", action: "제목 탭" },
+      { from: "a3f5b1c8", to: "d1f3a4b2", action: "펜 아이콘" },
+      { from: "d1f3a4b2", to: "e2a4b5c3", action: "텍스트 모드" },
+      { from: "e2a4b5c3", to: "f3b5c6d4", action: "옵션 더보기" },
+      { from: "a3f5b1c8", to: "a4c6d7e5", action: "삽입" },
+      { from: "a4c6d7e5", to: "b5d7e8f6", action: "이미지" },
+      { from: "f3b5c6d4", to: "c6e8f9a7", action: "지우개 모드" },
+      { from: "b5d7e8f6", to: "d7f9a0b8", action: "선택 모드" },
+      { from: "d7f9a0b8", to: "e8a0b1c9", action: "되돌리기" },
+      { from: "e8a0b1c9", to: "f9b1c2d0", action: "다시하기" },
+      { from: "f9b1c2d0", to: "a0c2d3e1", action: "형광펜 모드" },
+      { from: "a0c2d3e1", to: "b1d3e4f2", action: "1페이지" },
     ],
   },
   {
@@ -270,13 +319,21 @@ const sampleRuns = [
     has_screenshots: false,
     eventTypes: { new_screen: 7, action: 18, edge: 18, guard_block: 1, run_start: 1, run_end: 1 },
     newScreensTimeline: [
-      { offset: 0.6, fp: "a3f5b1c8", pkg: "com.samsung.android.app.notes", candidates: 28 },
-      { offset: 3.4, fp: "b7d1e2f0", pkg: "com.samsung.android.app.notes", candidates: 24 },
+      { offset: 0.6, fp: "a3f5b1c8", pkg: "com.samsung.android.app.notes", candidates: 28, image: "images/case-02-screen.png" },
+      { offset: 3.4, fp: "b7d1e2f0", pkg: "com.samsung.android.app.notes", candidates: 24, image: "images/case-04-screen.png" },
       { offset: 7.2, fp: "c8e2f3a1", pkg: "com.samsung.android.app.notes", candidates: 21 },
       { offset: 12.0, fp: "d9f3a4b2", pkg: "com.samsung.android.app.notes", candidates: 14 },
       { offset: 17.5, fp: "e0a4b5c3", pkg: "com.samsung.android.app.notes", candidates: 19 },
       { offset: 22.8, fp: "f1b5c6d4", pkg: "com.samsung.android.app.notes", candidates: 8 },
       { offset: 28.3, fp: "a2c6d7e5", pkg: "com.samsung.android.app.notes", candidates: 16 },
+    ],
+    hotEdges: [
+      { from: "a3f5b1c8", to: "b7d1e2f0", action: "펜 모드" },
+      { from: "b7d1e2f0", to: "c8e2f3a1", action: "색상 선택" },
+      { from: "a3f5b1c8", to: "d9f3a4b2", action: "텍스트 모드" },
+      { from: "d9f3a4b2", to: "e0a4b5c3", action: "글자 크기" },
+      { from: "c8e2f3a1", to: "f1b5c6d4", action: "굵기 변경" },
+      { from: "e0a4b5c3", to: "a2c6d7e5", action: "Bold" },
     ],
   },
 ];
@@ -334,6 +391,29 @@ function renderRunDetail() {
         ${stat("액션/초", r.stats.actions_per_sec.toFixed(2))}
       </div>
 
+      <h4>발견 화면 갤러리 (${r.newScreensTimeline.length})</h4>
+      <div class="screens-gallery">
+        ${r.newScreensTimeline.map((s, i) => `
+          <button class="screen-thumb" onclick="openZoom('${s.fp}', '${s.image || ""}')">
+            <div class="screen-thumb-img-wrap">
+              ${s.image
+                ? `<img src="${s.image}" alt="${s.fp}" loading="lazy" />`
+                : `<div class="thumb-placeholder">no img</div>`}
+              <span class="thumb-index">${i + 1}</span>
+            </div>
+            <div class="thumb-meta">
+              <code>${s.fp}</code>
+              <span class="muted small">+${s.offset.toFixed(1)}s · ${s.candidates}c</span>
+            </div>
+          </button>
+        `).join("")}
+      </div>
+
+      <h4>State Graph (${r.newScreensTimeline.length} 노드 · ${(r.hotEdges || []).length} HOT 엣지)</h4>
+      <div class="state-graph-wrap">
+        ${renderStateGraph(r.newScreensTimeline, r.hotEdges || [])}
+      </div>
+
       <h4>이벤트 분포</h4>
       <div class="bar-list">
         ${Object.entries(r.eventTypes).sort((a, b) => b[1] - a[1]).map(([k, v]) => `
@@ -345,7 +425,7 @@ function renderRunDetail() {
         `).join("")}
       </div>
 
-      <h4>발견 화면 (${r.newScreensTimeline.length})</h4>
+      <h4>발견 화면 시계열</h4>
       <ul class="screens-list">
         ${r.newScreensTimeline.map(s => `
           <li class="small">
@@ -358,6 +438,70 @@ function renderRunDetail() {
       </ul>
     </div>
   `;
+}
+
+// ─────────── state graph SVG ───────────
+function renderStateGraph(nodes, edges) {
+  if (!nodes.length) return '<div class="empty-card small">노드 없음</div>';
+  const COLS = 4, NODE_W = 130, NODE_H = 200, GAP_X = 40, GAP_Y = 60, PAD = 20;
+  const positions = new Map();
+  nodes.forEach((n, i) => {
+    const row = Math.floor(i / COLS);
+    const col = i % COLS;
+    positions.set(n.fp, { x: PAD + col * (NODE_W + GAP_X), y: PAD + row * (NODE_H + GAP_Y) });
+  });
+  const rows = Math.ceil(nodes.length / COLS);
+  const width = COLS * NODE_W + (COLS - 1) * GAP_X + PAD * 2;
+  const height = rows * NODE_H + (rows - 1) * GAP_Y + PAD * 2;
+
+  const edgePaths = edges.map(e => {
+    const from = positions.get(e.from);
+    const to = positions.get(e.to);
+    if (!from || !to) return "";
+    const x1 = from.x + NODE_W / 2, y1 = from.y + NODE_H;
+    const x2 = to.x + NODE_W / 2, y2 = to.y;
+    const my = (y1 + y2) / 2;
+    return `<path d="M ${x1},${y1} C ${x1},${my} ${x2},${my} ${x2},${y2}" fill="none" stroke="#ec7211" stroke-width="1.5" stroke-opacity="0.5" marker-end="url(#arrow)" />`;
+  }).join("");
+
+  const nodeShapes = nodes.map((n, i) => {
+    const p = positions.get(n.fp);
+    const imgEl = n.image
+      ? `<image href="${n.image}" x="4" y="4" width="${NODE_W - 8}" height="${NODE_H - 40}" preserveAspectRatio="xMidYMid meet" />`
+      : `<rect x="4" y="4" width="${NODE_W - 8}" height="${NODE_H - 40}" fill="#f2f3f3" />`;
+    return `
+      <g class="graph-node" transform="translate(${p.x}, ${p.y})" style="cursor:${n.image ? 'pointer' : 'default'}" onclick="${n.image ? `openZoom('${n.fp}', '${n.image}')` : ''}">
+        <rect width="${NODE_W}" height="${NODE_H}" rx="6" fill="#fff" stroke="#d5dbdb" stroke-width="1" />
+        ${imgEl}
+        <text x="${NODE_W/2}" y="${NODE_H - 18}" text-anchor="middle" font-size="11" font-weight="700" fill="#16191f" font-family="Consolas, monospace">#${i + 1} ${n.fp.slice(0, 8)}</text>
+        <text x="${NODE_W/2}" y="${NODE_H - 6}" text-anchor="middle" font-size="9" fill="#879596">+${n.offset.toFixed(1)}s · ${n.candidates}c</text>
+      </g>
+    `;
+  }).join("");
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" class="state-graph-svg" style="width:100%;max-height:720px">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ec7211" />
+        </marker>
+      </defs>
+      <g class="edges">${edgePaths}</g>
+      <g class="nodes">${nodeShapes}</g>
+    </svg>
+  `;
+}
+
+// ─────────── zoom overlay ───────────
+function openZoom(fp, imgSrc) {
+  if (!imgSrc) return;
+  const overlay = document.getElementById("zoom-overlay");
+  document.getElementById("zoom-img").src = imgSrc;
+  document.getElementById("zoom-caption").textContent = fp;
+  overlay.classList.add("active");
+}
+function closeZoom() {
+  document.getElementById("zoom-overlay").classList.remove("active");
 }
 
 function stat(label, value) {

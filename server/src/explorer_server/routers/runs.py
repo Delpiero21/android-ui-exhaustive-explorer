@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["runs"])
@@ -108,6 +109,24 @@ async def get_run_detail(run_id: str) -> dict[str, Any]:
         "events": events,
         "screens": screens,
     }
+
+
+@router.get("/runs/{run_id}/screens/{filename}")
+async def get_screen_image(run_id: str, filename: str) -> FileResponse:
+    """단일 화면 스크린샷 PNG. filename = fp_strict + .png."""
+    # path traversal 방지
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(400, detail="invalid filename")
+    if not filename.endswith(".png"):
+        raise HTTPException(400, detail="png only")
+    path = _runs_dir() / run_id / "screens" / filename
+    if not path.is_file():
+        raise HTTPException(404, detail=f"screen not found: {run_id}/{filename}")
+    return FileResponse(
+        path,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 def _to_summary(run_id: str, raw: dict[str, Any], has_screenshots: bool) -> RunSummary:

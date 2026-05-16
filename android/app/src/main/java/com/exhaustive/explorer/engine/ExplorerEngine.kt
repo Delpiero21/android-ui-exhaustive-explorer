@@ -168,6 +168,12 @@ class ExplorerEngine(
                             "[NEW#$screensExplored] fp=${fp.strict.take(8)} candidates=${node.candidateCount}",
                         )
                         recorder?.recordNewScreen(fp, screen)
+                        // 새 화면마다 스크린샷 저장 (최대 MAX_SCREENSHOTS 까지 — sdcard 압박 방지)
+                        if (screensExplored <= MAX_SCREENSHOTS) {
+                            val bitmap = screenCapture.capture(service)
+                            recorder?.saveScreenshot(fp.strict, bitmap)
+                            bitmap?.recycle()
+                        }
                     }
 
                     // 5. frontier 확인
@@ -285,5 +291,8 @@ class ExplorerEngine(
     companion object {
         private const val TAG = "ExplorerEngine"
         private const val MAX_NO_PROGRESS = 5
+
+        /** 한 run 당 저장할 최대 스크린샷 수. sdcard 압박 + 회수 시간 방지. */
+        private const val MAX_SCREENSHOTS = 50
     }
 }
