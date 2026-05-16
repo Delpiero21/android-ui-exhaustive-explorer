@@ -4,8 +4,8 @@
 > Accessibility · Pixel Grid · Computer Vision · Differential Probe · VLM 다섯 계층을 결합해
 > 단일 기법으로는 닿지 못하는 사각지대까지 audit-가능한 형태로 보고한다.
 
-[![status](https://img.shields.io/badge/status-phase%200%20bootstrap%20complete-green)]()
-[![phase](https://img.shields.io/badge/phase-0%20%E2%9C%93-blue)]()
+[![status](https://img.shields.io/badge/status-phase%201%20complete%20·%20autonomous%20DFS-green)]()
+[![phase](https://img.shields.io/badge/phase-1%20%E2%9C%93-blue)]()
 [![target](https://img.shields.io/badge/target-One%20UI%208.5%20%2F%20S26-black)]()
 
 ---

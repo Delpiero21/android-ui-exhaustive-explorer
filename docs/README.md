@@ -16,6 +16,7 @@
 | [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) | Samsung Notes 실측 검증 (5 케이스, 가설은 신규 캡처 시 추가) | 개발자, 보고 | 신규 캡처 시 |
 | [`RELATED_WORK.md`](RELATED_WORK.md) | 학계 / 산업계 비교 + 본 프로젝트의 위치 + LIMITATIONS × 학술 매핑 | 팀장 보고, 신규 합류자 | 분기 1 회 |
 | [`UI_INFO_SOURCES.md`](UI_INFO_SOURCES.md) | Android UI 정보 source 비교 (a11y / dumpsys / screencap / ViewDebug 등 10 종) + cross-check 매트릭스 | 개발자, 신규 합류자 | 신규 source 검토 시 |
+| [`DEMO.md`](DEMO.md) | 시연 절차 + 기반 기술 설명 흐름 + Q&A 대비 + 사고 대응 | 시연 진행자, 본인 | 시연 전 |
 | [`report.html`](report.html) | 한눈에 보는 대시보드 (보고용) | 팀장·매니저 발표 | LIMITATIONS/COUNTERMEASURES 갱신 시 |
 
 ---
