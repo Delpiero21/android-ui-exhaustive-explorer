@@ -15,6 +15,7 @@
 | [`ROADMAP.md`](ROADMAP.md) | Phase 0~3 단계별 산출물·완료 기준 | 팀, 보고 | Phase 진입/종료 시 |
 | [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) | Samsung Notes 실측 검증 (5 케이스, 가설은 신규 캡처 시 추가) | 개발자, 보고 | 신규 캡처 시 |
 | [`RELATED_WORK.md`](RELATED_WORK.md) | 학계 / 산업계 비교 + 본 프로젝트의 위치 + LIMITATIONS × 학술 매핑 | 팀장 보고, 신규 합류자 | 분기 1 회 |
+| [`UI_INFO_SOURCES.md`](UI_INFO_SOURCES.md) | Android UI 정보 source 비교 (a11y / dumpsys / screencap / ViewDebug 등 10 종) + cross-check 매트릭스 | 개발자, 신규 합류자 | 신규 source 검토 시 |
 | [`report.html`](report.html) | 한눈에 보는 대시보드 (보고용) | 팀장·매니저 발표 | LIMITATIONS/COUNTERMEASURES 갱신 시 |
 
 ---
@@ -46,10 +47,11 @@
 ### 🆕 처음 합류한 사람
 1. [`../README.md`](../README.md) — 프로젝트 한 줄 + 디렉토리 구조
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — 5-Tier 가 무엇이고 왜 그렇게 쌓았는가
-3. [`LIMITATIONS.md`](LIMITATIONS.md) → [`COUNTERMEASURES.md`](COUNTERMEASURES.md) — 왜 이렇게 만들었나
-4. [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) — 실측 5 케이스로 어떤 사각지대가 있는지 확인
-5. [`RELATED_WORK.md`](RELATED_WORK.md) — 학계 배경. §8 reading list 로 ~3.5 시간에 도메인 이해
-6. [`ROADMAP.md`](ROADMAP.md) — 어디까지 했고 어디로 가는가
+3. [`UI_INFO_SOURCES.md`](UI_INFO_SOURCES.md) — Android UI 정보 source 가 어떤 종류 있고 차이가 뭔지
+4. [`LIMITATIONS.md`](LIMITATIONS.md) → [`COUNTERMEASURES.md`](COUNTERMEASURES.md) — 왜 이렇게 만들었나
+5. [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) — 실측 5 케이스로 어떤 사각지대가 있는지 확인
+6. [`RELATED_WORK.md`](RELATED_WORK.md) — 학계 배경. §8 reading list 로 ~3.5 시간에 도메인 이해
+7. [`ROADMAP.md`](ROADMAP.md) — 어디까지 했고 어디로 가는가
 
 ### 📊 팀장·매니저 보고 준비
 1. [`report.html`](report.html) — 한 페이지 대시보드 (브라우저로 발표)
@@ -74,5 +76,6 @@
 | COUNTERMEASURES | 개발자 | 신규 기법 도입 검토 시 / Phase 완료 시 |
 | ROADMAP | 리드 | Phase 진입·완료 시 |
 | RELATED_WORK | 리드 | 분기 1 회 + 본 도구 Phase 전환 시 §6 매핑 갱신 |
+| UI_INFO_SOURCES | 리드/개발자 | 신규 source 검토 시 / OS 업그레이드로 API 변경 시 |
 | SAMSUNG_NOTES_HARD_CASES | 개발자 | 신규 케이스 캡처 시 |
 | report.html | 위 갱신될 때마다 동기화 |
