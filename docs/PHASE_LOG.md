@@ -1,298 +1,372 @@
-# Phase Log — 단계별 커버리지 / 한계 / 기술 기록
+# Phase Log — 단계별 I/O · Flow · 실패 · 커버리지 단일 진실
 
-> **본 문서의 운영 규칙**:
-> 각 Phase 마다 다음 **3 가지를 반드시 기록**한다 (팀장 mandate).
-> 1. **커버리지 (Coverage)** — 본 단계가 동작 가능하게 한 것
-> 2. **한계 (Limitations)** — 본 단계로는 안 되는 것 + 왜 (다음 단계로 미루는 명시적 이유)
-> 3. **기술 스택 (Technology)** — 사용한 API / 라이브러리 / 알고리즘 / 학술 근거
+> **본 문서의 운영 규칙 (팀장 mandate)**:
+> 각 Phase 마다 4 가지 + 종합 비교를 반드시 기록한다.
 >
-> Phase 시작 시 초안 작성, Phase 완료 시 실제 결과로 갱신. 한 Phase 도 누락 금지.
+> 1. **I/O 사양** — Input / Processing / Output
+> 2. **주요 Flow** — 입력 → 처리 → 출력 파이프라인 다이어그램
+> 3. **실패한 부분** — 안 되는 것 + 왜 + 다음 단계
+> 4. **커버리지** — 정량 지표
+>
+> 그리고 **§0 종합 비교 — Phase 진화 한눈에 보기** 를 매 Phase 마다 갱신.
 
 ---
 
-## 0. 색인 (한눈에)
+## 0. 종합 비교 — 한눈에 보는 Phase 진화
 
-| Phase | 상태 | 핵심 산출물 | 커버리지 한 줄 | 가장 큰 한계 |
+### 0.1 I/O 진화
+
+| 항목 | Phase 0 ✅ | Phase 1 ✅ | Phase 2 ⏳ | Phase 3 ⏳ |
 |---|---|---|---|---|
-| 0 — Bootstrap | ✅ | 빈 APK + 문서 8 종 + scaffolds | "빌드 / 설치 / 동작 가능" | 실제 탐색 X |
-| 1 — Autonomous DFS | ✅ | 19 Kotlin 파일 + autonomous 모드 + UI 토글 | "Samsung Notes 자율 탐색 + 안전 차단" | Tier 2/3/5 미구현 |
-| 2 — Blind Spot 보완 | ⏳ 계획 | Tier 2/3/5 + 온디바이스 ML | "Canvas/시각 속성 보강" | — |
-| 3 — System 연계 | ⏳ 계획 | dumpsys / logcat cross-check | "탐색 ↔ 추적 정합성" | — |
+| **Input** | (없음 — setup) | a11y 이벤트, `windows()`, target package, budget | + 스크린샷 비트맵 | + dumpsys 출력 (window/activity/SF) |
+| **핵심 처리** | scaffold | MultiWindowCollector → NodeTraversal → Fingerprint → DFS → Guard → Gesture | + PixelGrid + CV + OCR + VLM (stuck fallback) | + Compose semantics reflection + system ground-truth |
+| **Output** | 빈 APK + 문서 | StateGraph + EngineSnapshot + 실시간 logcat | + Tier 별 hit 기여도 + 후보 confidence + server snapshot | + 정합성 점수 + Coverage KPI 회귀 |
+
+### 0.2 커버리지 진화 (정량)
+
+| 지표 | P0 | **P1 (현재)** | P2 (목표) | P3 (목표) | 본질적 천장 |
+|---|---|---|---|---|---|
+| Activity coverage (Samsung Notes) | 0% | **40~55%** | 55~70% | 65~75% | ~80% |
+| 발견 화면 수 (60s budget) | 0 | **≥ 10** | ≥ 15 | ≥ 20 | — |
+| Canvas / SurfaceView 후보 발견율 | 0% | 0% | **≥ 30%** | ≥ 50% | ~70% |
+| 색깔 / 시각 속성 식별 | 불가능 | 불가능 | **9 색 + 휠 라벨** | 동일 | — |
+| 외부 통신 의존 (사외 데이터) | 0 | 0 | 0 (온디바이스) | 0 | 영구 0 |
+| 다중 윈도우 (popup) 해결 | 0건 | **3건** (Case 1/6/10) | 동일 | 동일 | — |
+| 위험 액션 차단 | 0 | **26 키워드 + 화면 evacuate** | + OCR 결합 | + 행동 패턴 | — |
+| Server ↔ Android 연동 | scaffold | 없음 | **snapshot HTTP push** | + 정합성 KPI | — |
+| Coverage 회귀 추적 | 없음 | 수동 측정 | 수동 측정 | **자동 + 시계열 DB** | — |
+
+### 0.3 해결된 사각지대 — Case 누적
+
+| Case (LIMITATIONS §) | 어디서 해결되나? | 해결 방식 |
+|---|---|---|
+| Case 1 SIP 키보드 (§2.3) | **Phase 1** ✅ | MultiWindowCollector — `getWindows()` 통합 |
+| Case 6 텍스트 ActionMode (§2.3) | **Phase 1** ✅ | MultiWindowCollector — popup window 포함 |
+| Case 10 AI 어시스트 팝업 (§2.3) | **Phase 1** ✅ | MultiWindowCollector — popup + main 동시 |
+| Case 2 손글씨 캔버스 (§1.1) | Phase 1 부분 → **Phase 2 완성** | Tier 4 Differential Probe + Tier 2 Grid |
+| Case 4 색상 팔레트 (§1.4) | **Phase 2** ⏳ | Tier 3 CV 색 검출 + ML Kit OCR |
+| (향후) 이미지 변형 핸들 (§1.1) | Phase 2 ⏳ | Tier 3 CV + Tier 4 |
+| (향후) WebView 내부 (§1.6) | Phase 3 ⏳ | Chrome DevTools bridge |
+| (향후) Compose semantics 누락 (§1.5) | Phase 3 ⏳ | WindowManagerGlobal reflection |
+| (영구) 로그인 / 결제 / 인증 | 해결 안 함 | DangerousActionGuard 차단 (의도된 out-of-scope) |
+
+### 0.4 진화 narrative (한 문단)
+
+> Phase 0 에서 빌드 가능한 골조 + 8 종 문서로 설계 정립. Phase 1 에서 a11y live API 한 source 만으로도 다중 윈도우 통합 (Case 1/6/10 해결) + 자율 DFS + 안전 차단 + 백트래킹 까지 — Samsung Notes 의 40~55% 자율 탐색 도달. Phase 2 에서 시각 source (스크린샷) 추가로 CV/OCR/VLM 보강 — Canvas / 색깔 같은 시각 속성 사각지대 해소. Phase 3 에서 시스템 측 ground-truth (dumpsys) 와 cross-check 해 보고 신뢰도 확보. 최종 65~75% 가 본 도구의 천장 — 그 이상은 본질적 한계 (로그인 / 결제 / 외부 API).
 
 ---
 
-## Phase 0 — Bootstrap ✅
+## Phase 0 — Bootstrap ✅ (2026-05-13 ~ 14, 8 commits)
 
-**기간**: 2026-05-13 ~ 14 (8 commits)
-**산출물**: 레포 셋업 + 문서 8 종 + 4 컴포넌트 scaffold + dev launcher
+### 1. I/O 사양
 
-### 커버리지 (이 단계로 가능해진 것)
-
-| 영역 | 동작 |
+| 항목 | 내용 |
 |---|---|
-| **Android APK** | `gradlew assembleDebug` 빌드 성공. 빈 화면 + AccessibilityService 등록만 |
-| **FastAPI Server** | `/api/health` 200 OK. `/api/runs` / `/api/coverage` stub |
-| **Web Dashboard** | Vite 5 + React 18. `/api/health` 폴링 health badge |
-| **Scripts** | `dev.ps1` 한 줄로 server + web + adb reverse 동시 기동 |
-| **문서** | 8 종 (LIMITATIONS / COUNTERMEASURES / ARCHITECTURE / ROADMAP / SAMSUNG_NOTES_HARD_CASES / RELATED_WORK / UI_INFO_SOURCES / report.html) |
-| **실측 캡처** | Samsung Notes 5 케이스 + 메타 발견 3 가지 |
+| **Input** | (직접 input 없음 — 본 phase 는 setup) <br/>외부 요구: 사내 단말 (Galaxy S26 eng), 검증 인프라 |
+| **Processing** | 1) Gradle/Kotlin/Compose 환경 셋업 <br/>2) FastAPI + Vite + React 스캐폴드 <br/>3) 문서 8 종 정립 (LIMITATIONS, COUNTERMEASURES, ARCHITECTURE, ROADMAP, RELATED_WORK, UI_INFO_SOURCES, SAMSUNG_NOTES_HARD_CASES, report.html) <br/>4) Samsung Notes 5 케이스 실측 캡처 + 메타 발견 정리 |
+| **Output** | 빈 APK (Service connected 로그만) + 문서 + scripts/dev.ps1 통합 런처 |
 
-### 한계 (이 단계로 안 되는 것 + 이유)
+### 2. 주요 Flow
 
-| 안 되는 것 | 이유 | 다음 단계 |
-|---|---|---|
-| 실제 UI 탐색 | 탐색 알고리즘 코드 0 | Phase 1 |
-| a11y 이벤트 처리 | Service 가 빈 껍데기 | Phase 1 |
-| 데이터 수집 / 저장 | storage 모듈 미구현 | Phase 1 후반 |
-| Server ↔ Android 통신 | snapshot push 미구현 | Phase 2 |
-| 시각화 (run map / coverage heatmap) | web 컴포넌트 미구현 | Phase 2 |
+```
+[개발자]
+   │
+   ├→ git clone
+   ├→ Android Studio sync (gradle wrapper jar 자동)
+   ├→ .\gradlew :app:assembleDebug → app-debug.apk
+   ├→ adb install -r ...
+   │
+[단말]
+   ├→ 설정 → 접근성 → UI Exhaustive Explorer → ON
+   ├→ MainActivity: "Phase 0 · Bootstrap" 빈 화면
+   └→ logcat: "Service connected" 로그만
 
-### 기술 스택
+[병행]
+   ├→ docs/ 8 종 작성
+   ├→ android-ui-dump-visualizer 로 Samsung Notes 5 케이스 캡처
+   └→ docs/SAMSUNG_NOTES_HARD_CASES.md 의 메타 발견 정리
+```
 
-| 카테고리 | 사용 기술 | 비고 |
-|---|---|---|
-| Build | Gradle 8.11.1 + Kotlin 2.0.21 + AGP 8.7.3 | Wrapper jar 포함 |
-| Android baseline | minSdk=31 (Android 12) / targetSdk=35 / compileSdk=35 | SM-S947U1 / Android 16 검증 환경 |
-| UI | Jetpack Compose BOM 2024.12.01 + Material3 | activity-compose:1.9.3 |
-| Server | Python 3.11+ / FastAPI 0.115+ / Pydantic 2.9+ / Hatchling | uvicorn + httpx |
-| Web | Vite 5.4 + React 18.3 + TypeScript 5.7 | strict mode, Bundler resolution |
-| 보안 | network_security_config.xml (loopback only) + data_extraction_rules.xml | 외부 egress 차단 |
-| 한글 폰트 | Pretendard CDN | report.html / web 공통 |
-| 학술 근거 (문서) | DroidBot / APE / Fastbot / TimeMachine / Mobile-Agent | RELATED_WORK.md 정리 |
+### 3. 실패한 부분 / 못 한 것
 
-### 출력 산출 위치
-- 코드: `android/`, `server/`, `web/`, `scripts/`
-- 문서: `docs/`
-- 실측 캡처: `docs/images/case-{01,02,04,06,10}-{screen,dump}.{png,xml}`
+| 영역 | 왜 못했나 | 영향 | 다음 단계 |
+|---|---|---|---|
+| 실제 UI 탐색 | 코드 0 — 본 단계는 setup 만 | 동작 시연 불가능 | Phase 1 |
+| a11y 이벤트 처리 | Service 가 빈 껍데기 | 데이터 수집 0 | Phase 1 |
+| 데이터 저장 | storage 모듈 미구현 | 결과 회수 불가 | Phase 1 후반 |
+| Server ↔ Android 통신 | snapshot push 미구현 | server stub 만 동작 | Phase 2 |
+| Web 시각화 (run map 등) | 컴포넌트 미구현 | health badge 만 표시 | Phase 2 |
+
+### 4. 커버리지
+
+| 지표 | 값 |
+|---|---|
+| 빌드 가능 여부 | ✅ |
+| 단말 설치 + Service connection | ✅ |
+| **Activity coverage** | **0%** (탐색 안 함) |
+| 발견 화면 수 | 0 |
+| 결정 가능한 액션 | 0 |
+| 처리된 위험 액션 | 0 |
+| 문서 완비도 | 8/8 종 (100%) |
+| 실측 케이스 | 5/15 (가설 10 건 제외) |
 
 ---
 
-## Phase 1 — Autonomous DFS ✅
+## Phase 1 — Autonomous DFS ✅ (2026-05-16, 3 commits, 19 .kt, ~2,200 lines)
 
-**기간**: 2026-05-16 (3 commits, 19 Kotlin 파일, ~2,200 lines)
-**산출물**: 자율 탐색 가능 APK + MainActivity UI 토글 + DEMO.md
+### 1. I/O 사양
 
-### 커버리지 (이 단계로 가능해진 것)
-
-#### 1. UI 정보 수집
-| 모듈 | 동작 |
+| 항목 | 내용 |
 |---|---|
-| `tier1_a11y/MultiWindowCollector` ⭐ | `AccessibilityService.getWindows()` 반복 → main + popup + IME 통합. `uiautomator dump` 의존 제거 |
-| `tier1_a11y/NodeTraversal` | BFS, MAX_NODES=5000, 5 액션 추론 (click/longclick/scroll/focus/edit) |
-| `core/ScreenInfo` + `WindowInfo` | 단일 스냅샷 통합 표현. orientation / IME 가시성 추출 |
-| `core/ScreenCapture` | `takeScreenshot()` (API 30+) — Tier 2/3/4/5 입력 source |
+| **Input** | `AccessibilityEvent` (TYPE_WINDOW_CONTENT_CHANGED / STATE_CHANGED / WINDOWS_CHANGED) <br/>`AccessibilityService.getWindows()` — 모든 활성 window <br/>사용자 설정: target package, budget (ms) |
+| **Processing** | 8 모듈 파이프라인 (Flow 참고): <br/>① MultiWindowCollector — getWindows() 반복으로 main + popup + IME root 수집 <br/>② NodeTraversal — BFS, 5 액션 추론 <br/>③ ScreenFingerprint — strict (텍스트/숫자 정규화) + loose (구조만) 두 단계 SHA-256 <br/>④ StateGraph upsert + popNextAction + addEdge (RW lock) <br/>⑤ DangerousActionGuard — 26 키워드 NFC 정규화 매칭 <br/>⑥ GestureDispatcher — coroutine wrapped dispatchGesture <br/>⑦ DialogDismisser — 시스템 popup window 자동 dismiss <br/>⑧ DifferentialProbe — 픽셀 diff HOT/WARM/COLD (선택 적용) |
+| **Output** | StateGraph (ScreenNode list + StateEdge list) <br/>EngineSnapshot (nodeCount, edgeCount, lastFp, autonomousRunning) <br/>실시간 logcat: `[NEW] fp=... pkg=... candidates=N` <br/>MainActivity 1s 폴링 UI (실시간 통계) |
 
-#### 2. State 식별 + 그래프
-| 모듈 | 동작 |
-|---|---|
-| `core/ScreenFingerprint` | strict + loose 두 단계 해시. 텍스트/숫자/시간 정규화, 좌표 8px 양자화 |
-| `core/StateGraph` | thread-safe RW lock. upsert / popNextAction / addEdge / snapshot |
+### 2. 주요 Flow
 
-#### 3. 액션 수행
-| 모듈 | 동작 |
-|---|---|
-| `input/GestureDispatcher` | tap / longpress / swipe / scroll. coroutine wrap. global action (BACK/HOME/RECENTS) |
-| `input/TextInputSampler` | `ACTION_SET_TEXT` IME 우회 텍스트 주입 (NodeInfo direct 만; cache 도입 후 candidate 버전) |
+```
+                           ┌─────────────────────────┐
+[AccessibilityEvent] ─────→│ Service.onAccessibilityEvent
+                           └─────────┬───────────────┘
+                                     │ (passive 모드 — 사용자 만지는 동안)
+                                     │
+                                     │     OR
+                                     │
+                          [MainActivity 시작 버튼] ────────────────┐
+                                                                  │
+                                                                  ▼
+                          ┌─────────────────────────────────────────┐
+                          │ ExplorerEngine.startAutonomous(target, budget)
+                          │   (coroutine on Dispatchers.Default)
+                          └──────────────────┬──────────────────────┘
+                                             │
+                          ╔══════════════════▼══════════════════╗
+                          ║         autonomous DFS loop          ║
+                          ║   while (active && budget < deadline) ║
+                          ╚══════════════════╤══════════════════╝
+                                             │
+        ┌────────────────────────────────────┼────────────────────────────────────┐
+        │                                    │                                    │
+        ▼                                    ▼                                    ▼
+[MultiWindowCollector]            [DangerousActionGuard]                [PathReplayer]
+service.windows()                 isSafe(candidate)?                    pressBack / goHome /
+walk all roots                    shouldEvacuateScreen?                 relaunch / replay
+   │                                    │                                    │
+   ▼                                    ▼                                    ▼
+ScreenInfo                        block / evacuate                     recover
+   │
+   ▼
+[NodeTraversal] BFS 후보 추출
+   │
+   ▼
+[ScreenFingerprint] strict + loose
+   │
+   ▼
+[StateGraph.upsert] node (isNew?)
+   │
+   ▼ popNextAction()
+[Candidate (a11y/grid/cv/vlm source)]
+   │
+   ▼ DangerousActionGuard.isSafe?
+   ├ false → 다음 액션
+   │
+   ▼
+[GestureDispatcher.perform] tap/swipe/scroll
+   │
+   ▼ delay(700ms) — settle
+   │
+   ▼
+[재수집] new ScreenInfo
+   │
+   ▼ new fp
+   │
+[StateGraph.addEdge(prev_fp, action, new_fp)]
+   │
+   ▼ loop
+```
 
-#### 4. 안전 + 자동 처리
-| 모듈 | 동작 |
-|---|---|
-| `guard/DangerousActionGuard` | 결제/송금/인증/SMS/삭제/로그아웃/외부앱 26 키워드. NFC 정규화. 화면 단위 evacuate |
-| `guard/DialogDismisser` | 시스템 popup 자동 dismiss (permission / 광고 / 알림). 한국어/영어 양쪽 |
-| `tier4_probe/DifferentialProbe` | bitmap pixel diff (8px 샘플링, ARGB threshold). HOT/WARM/COLD 분류 |
+### 3. 실패한 부분 / 못 한 것
 
-#### 5. 백트래킹
-| 모듈 | 동작 |
-|---|---|
-| `engine/PathReplayer` | BACK N회 → Home → relaunch → 좌표 replay ladder |
-| `engine/ExplorerEngine.autonomous` | DFS 루프 + budget(60s 기본) + max-no-progress 5회 → home/relaunch |
+| 영역 | 왜 못했나 | 영향 | 다음 단계 |
+|---|---|---|---|
+| Tier 2 Pixel Grid 후보 | 미구현 — Phase 1 범위 외 | a11y 미커버 영역 (Canvas/OpenGL) 후보 0 — Case 2 부분 해결만 | Phase 2 |
+| Tier 3 CV + OCR | 미구현 | Case 4 색상 9개 같은 시각 속성 미해결 | Phase 2 |
+| Tier 5 VLM | 미구현 | stuck 시 다음 액션 추론 fallback 없음 | Phase 2 |
+| NodeInfoCache | NodeInfo lifecycle 복잡 → 보류 | `performAction()` 못 씀, 좌표 fallback 만 — Case 4 동일 swatch 9개 정확 클릭 불가 | Phase 2 |
+| resource-id 우선 replay | NodeInfoCache 의존 | 단순 좌표 replay 만 — 해상도 변경 시 깨짐 | Phase 2 |
+| Server snapshot push | HTTP client + JSON 직렬화 보류 | MainActivity 만 결과 표시, web 대시보드 정적 | Phase 2 |
+| WebView 내부 DOM | Chrome DevTools bridge 필요 | WebView 사용 앱은 root 만 인식 | Phase 3 |
+| dumpsys cross-check | shell exec + 파서 | 시스템 ground-truth 와 정합성 검증 안 됨 | Phase 3 |
+| Compose semantics reflection | hidden API + eng 권한 | semantics 미설정 Composable 누락 | Phase 3 |
+| **빌드 검증** | 이번 세션은 코드 작성만 | 컴파일 에러 / runtime crash 가능성 | **일요일 빌드 + 시연 리허설** |
+| 정량 측정 (실측) | 단말 실행 후 측정 가능 | 커버리지 % 추정값만 보유 | **일요일 검증 후 본 표 갱신** |
 
-#### 6. 진입점 + UI
-| 모듈 | 동작 |
-|---|---|
-| `service/ExplorerAccessibilityService` | INSTANCE singleton + start/stop/snapshot. passive + autonomous |
-| `ui/MainActivity` | Compose 토글 + 1s 폴링 통계. target package / budget 입력 |
+### 4. 커버리지
 
-#### 7. 시연 가능한 시나리오 (DEMO.md)
-- A. **Passive** — 사용자 만지는 동안 fp/StateGraph 누적
-- B. **Autonomous** — Samsung Notes 60s 자율 DFS, 화면 ≥10 발견 목표
-- C. **Safety** — 위험 액션 차단 + 권한 dialog 자동 허용
-- D. **Audit** — report.html 한 페이지 보고
+| 지표 | 목표 | 실측 (TBD) | 측정 방법 |
+|---|---|---|---|
+| Activity coverage (Samsung Notes 60s) | 40~55% | **TBD — 일요일 측정** | logcat 의 [NEW] 카운트 vs Notes 총 Activity 수 |
+| 발견 unique 화면 수 | ≥ 10 | TBD | EngineSnapshot.nodeCount |
+| 화면 fingerprint 안정성 (재방문 시 strict 일치) | ≥ 95% | TBD | 같은 화면 5 회 재방문 후 unique fp 1 |
+| Replay 성공률 (단순 경로) | ≥ 80% | TBD | path 5 step 의 5 회 replay 중 도착 횟수 |
+| 위험 액션 차단 정확도 (precision) | 매우 높음 (false-positive 허용) | TBD | "결제/송금/삭제" 텍스트 후보 100% 차단 확인 |
+| 권한 dialog 자동 처리 | ≥ 90% | TBD | 5 회 권한 dialog 시도 중 통과 횟수 |
+| 자율 탐색 한 tick 평균 시간 | < 1.5s | TBD | (60s / 액션 수) 측정 |
+| 다중 윈도우 잡힘 (Case 1/6/10) | 3/3 | TBD | logcat 에 honeyboard / popup window id 카운트 |
+| 외부 통신 사용 | 0 | 0 ✅ | network_security_config 검증 (확정) |
 
-### 한계 (이 단계로 안 되는 것 + 이유)
-
-#### 미구현 Tier
-| Tier | 미구현 항목 | 영향 |
-|---|---|---|
-| **Tier 2** Pixel Grid | a11y 미커버 영역 격자 좌표 자동 후보 생성 | OpenGL / Canvas 영역의 후보 0 |
-| **Tier 3** CV + OCR | 색상·아이콘 시각 속성 검출 / 텍스트 영역 OCR | Case 4 (색상 9 swatch) 같은 시각 속성 사각지대 미해결 |
-| **Tier 5** VLM | stuck 시 fallback inference | 정체 화면에서 다음 액션 추론 없음 |
-
-#### 미구현 핵심 기능
-| 항목 | 이유 | 다음 단계 |
-|---|---|---|
-| `NodeInfoCache` | AccessibilityNodeInfo 객체 lifecycle 관리 복잡 | Phase 2 |
-| `performAction()` 기반 클릭 | NodeInfoCache 의존 | Phase 2 (좌표 fallback 으로 운영 중) |
-| resource-id 우선 replay | NodeInfoCache 의존 | Phase 2 |
-| Server snapshot push | HTTP client + JSON 직렬화 | Phase 2 |
-| Web dashboard 실시간 시각화 | server push 의존 | Phase 2 |
-| WebView 내부 DOM 접근 | Chrome DevTools bridge | Phase 3 |
-| dumpsys cross-check | shell 명령 호출 + 파서 | Phase 3 |
-| Compose semantics reflection | hidden API + eng 권한 | Phase 3 |
-| 학습 / 모델 기반 우선순위 | 학습 데이터 / runtime ML | Phase 4 (선택) |
-
-#### 정량 한계
-| 항목 | 현재 능력 | 천장 |
-|---|---|---|
-| Activity coverage (Samsung Notes 1 앱) | 40~55% (추정) | 65~75% (Phase 3 까지 누적) |
-| 화면 fingerprint 안정성 | 정적 화면 ≥ 95% / 동적 (리스트) ≥ 80% | — |
-| Replay 성공률 | 단순 경로 ≥ 80% / 인증 후 경로 0% | 본질적 |
-| 위험 액션 차단 | 26 키워드 매칭 + 화면 단위 evacuate | OCR 결합 시 향상 |
-
-#### 명시적 Out-of-Scope (audit 보고용)
-- 로그인이 필요한 화면 → 자동 인증 불가능
-- 결제 / SMS 전송 → DangerousActionGuard 차단
-- OpenGL 게임 UI → a11y 사각지대 + CV/VLM 도 비용 과다
-- WebView 내부 DOM → 별도 도메인 (Chrome DevTools)
-- S Pen hover preview → 짧은 표시, 캐치 비용 ↑
-- 외부 앱 이탈 후 → Foreground watcher 가 즉시 home
-
-### 기술 스택
-
-#### Android API
-| API | 용도 | Phase 0 → 1 추가 |
-|---|---|---|
-| `AccessibilityService.getWindows()` | 모든 활성 window 접근 ⭐ | NEW |
-| `AccessibilityService.takeScreenshot(displayId, executor, cb)` | API 30+ 스크린샷 | NEW |
-| `AccessibilityService.dispatchGesture(gesture, cb, handler)` | 합성 터치 | NEW |
-| `AccessibilityService.performGlobalAction(GLOBAL_ACTION_*)` | BACK/HOME/RECENTS | NEW |
-| `AccessibilityNodeInfo.performAction(ACTION_SET_TEXT)` | IME 우회 텍스트 입력 | NEW |
-| `AccessibilityEvent.TYPE_WINDOW_*_CHANGED` | 화면 변화 이벤트 | NEW |
-| `GestureDescription` + `StrokeDescription` + `Path` | 터치 경로 합성 | NEW |
-| `Bitmap.wrapHardwareBuffer()` + `HardwareBuffer.close()` | 스크린샷 GPU 메모리 처리 | NEW |
-
-#### Kotlin / JVM
-| 기술 | 용도 |
-|---|---|
-| `kotlinx.coroutines` (1.9.0) | 비동기 + structured concurrency. `suspendCancellableCoroutine` 으로 callback API wrap |
-| `kotlin.concurrent.read/write` extension | RW lock idiom |
-| `java.util.concurrent.locks.ReentrantReadWriteLock` | StateGraph thread safety |
-| `java.security.MessageDigest("SHA-256")` | 두 단계 fingerprint |
-| `java.text.Normalizer.Form.NFC` | 한글 자모 결합 정규화 (한글 "허용" 매칭 사고 방지) |
-| `kotlin.collections.ArrayDeque` | pendingActions queue (DFS frontier) |
-| sealed class / data class | NodeRef / TickResult / ProbeResult.Verdict 타입 안전 분기 |
-
-#### 알고리즘
-| 알고리즘 | 모듈 | 출처 |
-|---|---|---|
-| BFS tree walk (MAX_NODES guard) | NodeTraversal | 표준 |
-| Two-level fingerprint hash (strict + loose) | ScreenFingerprint | DroidBot 의 strict + APE 의 model refinement 의 절충 |
-| DFS with frontier + backtrack ladder | ExplorerEngine | A³E (OOPSLA 2013) 직계 |
-| Pixel diff with regional masking | DifferentialProbe | 자체 (perceptual hash 는 Phase 2) |
-| NFC unicode normalization 기반 라벨 매칭 | DangerousActionGuard, DialogDismisser | 자체 (한글 사고 사례) |
-
-#### Compose UI
-| 컴포넌트 | 용도 |
-|---|---|
-| `Surface + Column + Card` | 패널 레이아웃 |
-| `OutlinedTextField` | target package / budget 입력 |
-| `Button + OutlinedButton` | 시작/중지/초기화 |
-| `LaunchedEffect + delay(1000L)` | 1초 폴링 |
-| `MutableStateFlow.collectAsState()` | snapshot 반응형 갱신 |
-| `Modifier.fillMaxWidth().weight(1f)` | 좌우 균등 분할 |
-
-#### 학술 근거 (코드 → 논문 매핑)
-| 본 코드 | 학술 참조 | 차별점 |
-|---|---|---|
-| `MultiWindowCollector.getWindows()` | DroidBot 도 사용 — Li et al. ICSE 2017 | 본 도구는 명시적 module 화 + Case 1/6/10 실측 입증 |
-| `ScreenFingerprint` 두 단계 | DroidBot (strict) / APE (refinement) — Gu et al. ICSE 2019 | 본 도구는 둘 다 동시 산출 |
-| `ExplorerEngine.DFS` | A³E — Azim & Neamtiu OOPSLA 2013 | 본 도구는 budget + max-no-progress + evacuate 보강 |
-| `PathReplayer.relaunch` | TimeMachine 의 정공법 — Dong et al. ICSE 2020 (snapshot 까진 아직) | snapshot 보다 가벼움 (Phase 3 검토) |
-| `DangerousActionGuard` | (학계 거의 부재) | 본 도구 자체 발명 |
-| `DifferentialProbe` | (학계 일부 시도, 명시적 module 화 드묾) | 본 도구가 Tier 격상 |
-| autonomous DFS 운영 | Fastbot (ByteDance ESEC/FSE 2020) | 본 도구는 결정적, Fastbot 은 RL |
-
-#### 의존성 (build.gradle.kts)
-- `androidx.core:core-ktx:1.15.0`
-- `androidx.lifecycle:lifecycle-runtime-ktx:2.8.7`
-- `androidx.activity:activity-compose:1.9.3`
-- Compose BOM 2024.12.01 (ui + material3 + tooling-preview)
-- `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0` (NEW)
-
-### 출력 산출 위치
-- 코드: `android/app/src/main/java/com/exhaustive/explorer/` (19 .kt)
-- 문서 갱신: `docs/ROADMAP.md` (11/11 ✅), `docs/report.html` (Phase 1 표시)
-- 신규 문서: `docs/DEMO.md` (시연 가이드)
+→ **TBD 들은 일요일 단말 검증 후 실측 채움. PHASE_LOG.md mandate.**
 
 ---
 
 ## Phase 2 — Blind Spot 보완 ⏳ (계획)
 
-**예정 산출물**: Tier 2 (Pixel Grid) + Tier 3 (CV + OCR) + Tier 5 (VLM on-device) + server snapshot push
+### 1. I/O 사양 (예정)
 
-### 커버리지 (예정)
-- a11y 미커버 영역 (Canvas / OpenGL) 좌표 후보 자동 생성 — Case 2 보완
-- 시각 속성 라벨링 (색상 / 아이콘) — Case 4 보완
-- stuck 시 VLM fallback (Gemini Nano on-device via AICore, 또는 Gemma 2 2B via MediaPipe)
-- NodeInfoCache 로 `performAction()` 활용 — 좌표 의존 제거
-- Server snapshot push (HTTP) + web 실시간 시각화
-
-### 한계 (예정 — Phase 2 종료 시점에도 안 되는 것)
-- WebView 내부 DOM — Phase 3
-- dumpsys cross-check — Phase 3
-- Compose semantics reflection — Phase 3
-- 학습 기반 우선순위 (RL/imitation) — Phase 4 검토만
-
-### 기술 스택 (예정)
-| 영역 | 후보 기술 |
+| 항목 | 내용 |
 |---|---|
-| Pixel Grid | TFLite + 좌표 후보 생성 / coarse-to-fine 256→64→16px |
-| CV Detection | OpenCV (사각형/원 검출) 또는 TFLite SSDLite |
-| OCR | ML Kit Text Recognition (Korean) — 30MB 모델, <100ms |
-| VLM on-device | Google AICore (Gemini Nano) **또는** MediaPipe LLM Inference (Gemma 2 2B) |
-| HTTP push | OkHttp (Square) 또는 Android 내장 HttpURLConnection + JSONObject |
-| JSON | kotlinx.serialization 또는 Gson |
+| **Input** | Phase 1 의 ScreenInfo + **`AccessibilityService.takeScreenshot()` 비트맵** |
+| **Processing** | + **Tier 2** PixelGridSampler — a11y 미커버 영역 격자 좌표 후보 <br/>+ **Tier 3** CvProposer (TFLite/OpenCV) — 버튼·아이콘 검출, 색 추출 <br/>+ **Tier 3** OcrLabeler (ML Kit Text Recognition Korean) — 텍스트 영역 라벨 <br/>+ **Tier 5** VlmProposer (on-device: Gemini Nano via AICore **또는** Gemma 2 2B via MediaPipe) — stuck 시 fallback <br/>+ NodeInfoCache — performAction() 활성화 <br/>+ Server snapshot HTTP push |
+| **Output** | Phase 1 Output + **후보 confidence (a11y vs CV vs VLM)** + **Tier 별 hit 기여도 통계** + **web 대시보드 실시간 시각화** |
 
-**오픈 의사결정**:
-1. CV — OpenCV (full) vs TFLite (작음, NPU 가속)
-2. VLM — Gemini Nano (S26 호환성 확인 필요) vs Gemma MediaPipe (안정, 다국어)
-3. JSON — kotlinx (Kotlin 친화) vs Gson (성숙)
+### 2. 주요 Flow (예정)
+
+```
+... (Phase 1 흐름)
+   │
+   ▼ MultiWindowCollector.collect()
+ScreenInfo (Tier 1 후보)
+   │
+   ├──────────────────────────────────────────────┐
+   │                                              │
+   ▼ ScreenCapture.capture()                      │
+Bitmap                                            │
+   │                                              │
+   ├→ [Tier 2] PixelGridSampler                  │
+   │   coarse-to-fine 256→64→16px                │
+   │   a11y 미커버 영역만                          │
+   │   → 좌표 후보 N 개 추가                       │
+   │                                              │
+   ├→ [Tier 3a] CvProposer (TFLite SSDLite)       │
+   │   사각형 + 원 검출                            │
+   │   → bbox 후보 M 개 + dominant color 라벨    │
+   │                                              │
+   ├→ [Tier 3b] OcrLabeler (ML Kit Korean)        │
+   │   각 후보 영역의 텍스트 추출                  │
+   │   → 후보 라벨 보강 (위험 단어 매칭)            │
+   │                                              │
+   └→ [Tier 5] (stuck > 5 일 때만)                │
+       VlmProposer.propose(bitmap + StateGraph 요약)
+       → 자연어 추론 후보 K 개
+   │
+   ▼ 통합 후보 리스트 (a11y N + grid M + cv P + vlm K)
+   │
+   ▼ DangerousActionGuard.isSafe? (OCR 결합 강화)
+   │
+   ▼ Tier 4 DifferentialProbe — 모든 후보 검증 (HOT 만 채택)
+   │
+   ▼ NodeInfoCache 가 a11y 후보면 performAction() 호출
+   │   아니면 GestureDispatcher 좌표 탭
+   │
+   ... (이후 Phase 1 흐름)
+
+[Server snapshot push (5s polling)]
+ExplorerEngine.snapshot() → JSON → HTTP POST /api/runs/{id}/snapshot
+                                  → web 대시보드 실시간 갱신
+```
+
+### 3. 실패할 위험 (예상 + 완화)
+
+| 영역 | 위험 | 완화 방안 |
+|---|---|---|
+| Gemini Nano S26 미지원 | AICore 가 단말 의존 | Gemma 2 2B via MediaPipe 백업 (안정) |
+| TFLite 모델 정확도 | 한국 UI specific 학습 데이터 없음 | 1차: OpenCV 룰 / 2차: 사내 데이터 fine-tune |
+| ML Kit OCR 의 한자/이모지 | 인식 안 됨 | 텍스트 영역만 활용, 비텍스트는 무시 |
+| VLM hallucination (없는 버튼 추론) | model artifact | a11y/CV 후보와 IoU 0.3+ 교차 검증 필수 |
+| HTTP push 신뢰성 | adb reverse 끊김 가능 | retry 3 회 + offline buffer (sd card jsonl) |
+| Tier 4 Probe 비용 | 후보당 2 screenshot + diff | top-N 우선 (priority queue) — 모든 후보 안 함 |
+| Bitmap 메모리 압박 | 1080×2340 ARGB = ~10MB × 수십장 | 즉시 recycle + 다운샘플 |
+| NodeInfoCache 정합성 | NodeInfo lifecycle 짧음 | 화면 변할 때마다 cache invalidate |
+
+### 4. 커버리지 (목표)
+
+| 지표 | Phase 1 → Phase 2 목표 |
+|---|---|
+| Activity coverage (Samsung Notes) | 40~55% → **55~70%** |
+| Canvas 영역 후보 발견율 | 0% → **≥ 30%** (Tier 2 Grid + Tier 4 Probe) |
+| 색깔 식별률 (Case 4 9 swatch) | 0% → **9 색 + 휠 모두 라벨** |
+| 아이콘 의미 인식 | 0% (좌표만) → **OCR/CV 으로 라벨 보강** |
+| Tier 별 hit 기여도 측정 | 없음 → **있음 (a11y N%, CV M%, Probe P%, VLM Q%)** |
+| Stuck 회복률 | 5 회 → home/relaunch | **+ VLM fallback 으로 self-recovery** |
+| Server 실시간 시각화 | 없음 | **/api/runs 가 실제 데이터, web 폴링 표시** |
+| 외부 통신 | 0 | **0 (온디바이스 VLM)** ✅ |
 
 ---
 
 ## Phase 3 — System 연계 ⏳ (계획)
 
-**예정 산출물**: dumpsys 파서 + Compose semantics reflection + Ground-truth 정합성 검증 + Coverage 회귀 KPI
+### 1. I/O 사양 (예정)
 
-### 커버리지 (예정)
-- `dumpsys window` / `activity` / `SurfaceFlinger` / `gfxinfo` cross-check
-- `WindowManagerGlobal` reflection (eng 빌드) — Compose semantics 누락 보강
-- 탐색 결과 ↔ logcat 의 system event 정합성 측정
-- 단말 / 앱 inventory 단위 coverage KPI
-
-### 한계 (Phase 3 후에도)
-- 로그인 / 인증 / 결제 — 영구 out-of-scope
-- 게임 UI (실시간 OpenGL) — Tier 5 VLM 도 비용 한계
-- OS 메이저 업그레이드 시 dumpsys 포맷 변경 — 파서 재작성
-
-### 기술 스택 (예정)
-| 영역 | 후보 |
+| 항목 | 내용 |
 |---|---|
-| Shell exec | Kotlin `Runtime.getRuntime().exec("dumpsys ...")` |
-| Reflection | `Class.forName("android.view.WindowManagerGlobal")` + private method invoke |
-| 정합성 점수 | Jaccard similarity between (탐색이 본 component set) ↔ (실제 logcat 의 ResumedActivity set) |
-| 회귀 추적 | 시계열 DB (SQLite) + 주간 자동 sweep cron |
+| **Input** | Phase 2 의 모든 source + **`dumpsys window/activity/SurfaceFlinger/gfxinfo` 출력** + (eng 한정) **WindowManagerGlobal reflection** |
+| **Processing** | + dumpsys 파서 (버전별 분기) <br/>+ logcat 필터 (탐색 액션 → 시스템 이벤트 매핑) <br/>+ Compose semantics reflection (eng 빌드) <br/>+ 정합성 점수 (Jaccard similarity between explored set vs actual resumed set) <br/>+ 시계열 DB (SQLite) — 주간 회귀 |
+| **Output** | Phase 2 Output + **시스템 측 ground-truth 비교 보고** + **Coverage 시계열 그래프** + **회귀 알람** |
+
+### 2. 주요 Flow (예정)
+
+```
+... (Phase 2 흐름)
+   │
+   ├→ [parallel] dumpsys cross-check (5s 주기 worker)
+   │   ├ dumpsys window windows → mFocus / IME / window stack
+   │   ├ dumpsys activity activities → resumed activity
+   │   └ dumpsys SurfaceFlinger --list → 실제 컴포지팅 surface
+   │
+   ├→ a11y 가 본 window list ↔ dumpsys window stack 비교
+   │   IoU < 0.8 면 누락 영역 보고 (a11y 가 못 본 window)
+   │
+   ├→ [eng 한정] WindowManagerGlobal reflection
+   │   → Compose semantics 미설정 view 까지 접근
+   │
+   ├→ 탐색 액션 시퀀스 ↔ logcat 의 ResumedActivity 시퀀스
+   │   → 정합성 점수 (Jaccard)
+   │
+   └→ 회귀 sweep cron (주 1 회)
+       → SQLite 에 시계열 저장
+       → 직전 주 대비 변화 알람 (커버리지 ±5% 이상)
+```
+
+### 3. 실패할 위험 (예상)
+
+| 영역 | 위험 | 완화 |
+|---|---|---|
+| OS 업그레이드 시 dumpsys 포맷 변경 | 파서 재작성 | 버전별 분기 + 회귀 테스트 셋 |
+| Reflection API 변경 | hidden API 깨짐 | try-catch + 미지원 환경 fallback |
+| 시계열 DB 용량 | 1년 누적 시 수 GB | 압축 + 오래된 데이터 sampling |
+| Jaccard 점수의 해석 | 도메인 컨텍스트 부족 | 사내 운영자 함께 임계값 튜닝 |
+
+### 4. 커버리지 (목표)
+
+| 지표 | Phase 2 → Phase 3 목표 |
+|---|---|
+| Activity coverage | 55~70% → **65~75%** (천장 근접) |
+| 탐색 ↔ ground-truth 정합성 점수 | 없음 → **≥ 90%** |
+| OS 측 누락 영역 보고 | 없음 → **자동 매주 sweep** |
+| Coverage 시계열 가시화 | 없음 → **시계열 그래프 + 회귀 알람** |
+| 사내 inventory 단위 audit | 없음 → **N개 단말 × M개 앱 sweep 보고** |
 
 ---
 
-## 본 문서 갱신 정책
+## 본 문서 갱신 정책 (mandate)
 
 | 시점 | 누가 | 무엇을 |
 |---|---|---|
-| Phase 시작 시 | 리드 | 다음 Phase 섹션 초안 작성 (커버리지/한계/기술 예정) |
-| 산출물 1 개 완성 시 | 개발자 | 해당 Phase 의 커버리지 항목에 ✓ 표시 |
-| Phase 종료 시 | 리드 | 실제 결과로 한계 / 기술 갱신. 다음 Phase 초안 시작 |
-| 예상 못한 한계 발견 시 | 누구든 | 즉시 한계 섹션에 추가 + 그 사유 명시 |
+| Phase 시작 시 | 리드 | 다음 Phase 4 부 초안 작성 (Input / Processing / Output / Flow / 예상 실패 / 목표 커버리지) |
+| **산출물 1 개 완성 시** | **개발자** | **§4 커버리지의 해당 지표를 ✓ 또는 실측값으로 갱신 + §3 실패 부분에서 해당 항목 제거** |
+| Phase 종료 시 | 리드 | §0 종합 비교의 해당 컬럼을 ✅ + 실측값 채움. 다음 Phase 초안 시작 |
+| 예상 못한 한계 발견 시 | 누구든 | 즉시 §3 실패에 추가 + 사유 + 다음 단계 명시 |
+| 정량 측정 완료 시 | 개발자 | §4 커버리지의 TBD → 실측값 |
 
-→ **본 문서는 "본 도구가 무엇을 할 수 있는가" 의 단일 진실 (single source of truth).**
-   외부 (팀장 보고 / 신규 합류자 / 다음 분기 계획) 질문 시 이 문서 한 개만 보면 답이 나와야 한다.
+→ **본 문서가 "지금 본 도구로 무엇이 되고 안 되는가" 의 단일 진실 (single source of truth).**
+   외부 (팀장 보고 / 신규 합류자 / 차기 분기 계획 / 시연 Q&A) 질문 시 본 문서 한 개로 답.
