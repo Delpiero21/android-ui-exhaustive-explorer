@@ -53,18 +53,32 @@ cd C:\GitHub\Delpiero21\android-ui-exhaustive-explorer
 처음 한 번 실행 전:
 
 ```powershell
-# server
+# ─── Option A: conda env (권장) ───
+conda create -n explorer python=3.12 -y
+conda activate explorer
+cd server
+pip install -e ".[dev]"
+cd ..\web
+npm install
+cd ..
+
+# 이후 dev.ps1 은 자동으로 explorer env 사용
+.\scripts\dev.ps1
+# 다른 env 이름 쓰려면:
+# .\scripts\dev.ps1 -CondaEnv myenv
+
+# ─── Option B: 시스템 Python + venv ───
 cd server
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 deactivate
-cd ..
-
-# web
-cd web
+cd ..\web
 npm install
 cd ..
+
+# conda 비활성화 모드로 dev.ps1 실행
+.\scripts\dev.ps1 -CondaEnv none
 ```
 
 이후엔 `.\scripts\dev.ps1` 만 실행.

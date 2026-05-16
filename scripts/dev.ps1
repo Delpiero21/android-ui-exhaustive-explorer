@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Phase 0 통합 개발 모드 런처.
+    통합 개발 모드 런처 (server + web + adb reverse).
 
 .DESCRIPTION
     아래 3가지를 한 번에 기동한다:
@@ -10,34 +10,48 @@
 
     각 컴포넌트는 새 PowerShell 창에서 실행되며 Ctrl+C 로 개별 종료한다.
 
+    conda env 자동 활성화 — 기본값 "explorer".
+
 .PARAMETER BindHost
     LAN 모드. 0.0.0.0 또는 사내 PC IP (예: 10.10.5.20) 를 주면
     server / web 모두 LAN 바인딩 + CORS 화이트리스트에 추가.
-    생략 시 loopback only (가장 안전).
 
 .PARAMETER SkipAdbReverse
-    adb reverse 단계를 건너뛴다. 단말 안 꽂혀있거나 web 만 띄울 때 사용.
+    adb reverse 단계를 건너뛴다.
+
+.PARAMETER CondaEnv
+    server 가 사용할 conda env 이름. 기본 "explorer".
+    "none" 또는 빈 문자열이면 conda 활성화 안 함 (system Python 사용).
 
 .EXAMPLE
     .\scripts\dev.ps1
-    # 가장 기본 — 로컬 PC 에서만 접근
+    # 기본 — conda explorer env, loopback only
 
 .EXAMPLE
     .\scripts\dev.ps1 -BindHost 10.10.5.20
     # 사내 LAN 다른 PC 에서 대시보드 보고 싶을 때
+
+.EXAMPLE
+    .\scripts\dev.ps1 -CondaEnv none
+    # conda 없이 system Python 으로
 #>
 [CmdletBinding()]
 param(
     [string]$BindHost = "",
-    [switch]$SkipAdbReverse
+    [switch]$SkipAdbReverse,
+    [string]$CondaEnv = "explorer"
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 
 Write-Host ""
-Write-Host "android-ui-exhaustive-explorer · Phase 0 dev launcher" -ForegroundColor Cyan
-Write-Host "root: $root" -ForegroundColor DarkGray
+Write-Host "android-ui-exhaustive-explorer · dev launcher" -ForegroundColor Cyan
+Write-Host "root      : $root" -ForegroundColor DarkGray
+$useConda = $CondaEnv -and $CondaEnv -ne "none"
+if ($useConda) {
+    Write-Host "conda env : $CondaEnv" -ForegroundColor DarkGray
+}
 Write-Host ""
 
 # ----- 1. adb reverse -----
@@ -68,9 +82,29 @@ if ($BindHost) {
     $serverEnv["EXPLORER_ALLOW_LAN"] = "1"
     $serverEnv["EXPLORER_LAN_HOST"] = $BindHost
 }
-
 $envSetters = ($serverEnv.GetEnumerator() | ForEach-Object { "`$env:$($_.Key)='$($_.Value)'" }) -join "; "
-$serverCmd = "$envSetters; cd '$serverDir'; explorer-server"
+
+if ($useConda) {
+    # conda activate 는 새 shell 에서 직접 호출하려면 conda 가 PowerShell profile 에 init 되어 있어야 함.
+    # 가장 확실한 방법: conda env 의 Scripts/ 디렉토리에서 explorer-server.exe 를 직접 실행.
+    $condaBase = & conda info --base 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $condaBase) {
+        Write-Host "      WARN: conda 명령 실패 — system Python 으로 fallback" -ForegroundColor DarkYellow
+        $serverExe = "explorer-server"
+    } else {
+        $condaBase = $condaBase.Trim()
+        $serverExe = Join-Path $condaBase "envs\$CondaEnv\Scripts\explorer-server.exe"
+        if (-not (Test-Path $serverExe)) {
+            Write-Host "      WARN: $serverExe 없음 — system explorer-server 로 fallback" -ForegroundColor DarkYellow
+            $serverExe = "explorer-server"
+        } else {
+            Write-Host "      conda env: $CondaEnv ($serverExe)" -ForegroundColor DarkGray
+        }
+    }
+    $serverCmd = "$envSetters; cd '$serverDir'; & '$serverExe'"
+} else {
+    $serverCmd = "$envSetters; cd '$serverDir'; explorer-server"
+}
 
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $serverCmd | Out-Null
 Write-Host "      started in new window — http://$($serverEnv['EXPLORER_HOST']):8000" -ForegroundColor Green
