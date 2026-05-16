@@ -63,6 +63,8 @@ class MainActivity : ComponentActivity() {
                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                             )
                         },
+                        // 시작 후 우리 앱을 즉시 background 로 — target 앱이 자연 노출됨
+                        onAfterStart = { moveTaskToBack(true) },
                     )
                 }
             }
@@ -71,9 +73,12 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun ControlPanel(onOpenA11ySettings: () -> Unit) {
+private fun ControlPanel(
+    onOpenA11ySettings: () -> Unit,
+    onAfterStart: () -> Unit,
+) {
     var targetPackage by remember { mutableStateOf("com.samsung.android.app.notes") }
-    var budgetSec by remember { mutableStateOf("60") }
+    var budgetSec by remember { mutableStateOf("300") }  // 기본 5 분
 
     // 1초 주기로 service snapshot 폴링 — 가벼움
     val snapshotFlow = remember { MutableStateFlow<ExplorerEngine.EngineSnapshot?>(null) }
@@ -133,8 +138,8 @@ private fun ControlPanel(onOpenA11ySettings: () -> Unit) {
                 )
                 OutlinedTextField(
                     value = budgetSec,
-                    onValueChange = { v -> budgetSec = v.filter { it.isDigit() }.take(3) },
-                    label = { Text("budget (seconds)") },
+                    onValueChange = { v -> budgetSec = v.filter { it.isDigit() }.take(5) },
+                    label = { Text("budget (seconds) — 0 = 무제한 (frontier 소진 시 자동 종료)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -149,10 +154,14 @@ private fun ControlPanel(onOpenA11ySettings: () -> Unit) {
             val running = snapshot?.autonomousRunning == true
             Button(
                 onClick = {
+                    // budget=0 → unlimited (engine 내부에서 처리)
+                    val budgetMs = (budgetSec.toLongOrNull() ?: 300L) * 1000L
                     ExplorerAccessibilityService.INSTANCE?.startAutonomous(
                         targetPackage = targetPackage.takeIf { it.isNotBlank() },
-                        budgetMs = (budgetSec.toLongOrNull() ?: 60L) * 1000L,
+                        budgetMs = budgetMs,
                     )
+                    // 즉시 우리 앱을 background 로 — target 앱이 자연 노출됨
+                    onAfterStart()
                 },
                 enabled = serviceReady && !running,
                 modifier = Modifier.fillMaxWidth().weight(1f),

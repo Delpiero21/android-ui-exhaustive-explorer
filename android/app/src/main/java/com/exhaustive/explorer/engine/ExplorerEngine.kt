@@ -108,8 +108,8 @@ class ExplorerEngine(
     fun startAutonomous(
         service: AccessibilityService,
         targetPackage: String? = null,
-        budgetMs: Long = 60_000L,
-        maxScreens: Int = 200,
+        budgetMs: Long = 300_000L,   // 기본 5 분. 0 이면 무제한 (탐색 종료 조건만 따름)
+        maxScreens: Int = 0,         // 0 이면 무제한 (모든 frontier 소진 시 종료)
     ) {
         if (autonomousJob?.isActive == true) {
             Log.w(TAG, "autonomous already running")
@@ -125,14 +125,25 @@ class ExplorerEngine(
         }
 
         autonomousJob = scope.launch {
-            val deadline = SystemClock.uptimeMillis() + budgetMs
-            Log.i(TAG, "autonomous start — pkg=$targetPackage budget=${budgetMs}ms")
+            val unlimitedBudget = budgetMs <= 0
+            val unlimitedScreens = maxScreens <= 0
+            val deadline = if (unlimitedBudget) Long.MAX_VALUE else SystemClock.uptimeMillis() + budgetMs
+            Log.i(
+                TAG,
+                "autonomous start — pkg=$targetPackage budget=${if (unlimitedBudget) "∞" else "${budgetMs}ms"} " +
+                    "maxScreens=${if (unlimitedScreens) "∞" else "$maxScreens"}"
+            )
             var screensExplored = 0
             var actionsExecuted = 0
             var noProgressCount = 0
+            var fullyExploredChecks = 0
 
             try {
-                while (isActive && SystemClock.uptimeMillis() < deadline && screensExplored < maxScreens) {
+                while (
+                    isActive &&
+                    SystemClock.uptimeMillis() < deadline &&
+                    (unlimitedScreens || screensExplored < maxScreens)
+                ) {
                     // 1. collect + fingerprint
                     val screen = collector.collect(service)
                     if (!screen.hasActiveWindow) {
@@ -142,10 +153,35 @@ class ExplorerEngine(
 
                     // 2. target package 이탈 감지
                     if (targetPackage != null && screen.foregroundPackage != targetPackage) {
-                        Log.w(TAG, "out-of-target: ${screen.foregroundPackage} — return home + relaunch")
-                        replayer.goHome()
-                        replayer.relaunchApp(targetPackage)
-                        delay(2000L)
+                        val fg = screen.foregroundPackage ?: ""
+                        val isLauncher = fg.contains("launcher") || fg == "com.sec.android.app.launcher"
+                        val isOurApp = fg.startsWith("com.exhaustive.explorer")
+
+                        if (isLauncher || isOurApp) {
+                            // 진짜 빠져나옴 (launcher 또는 우리 앱) → relaunch 필요
+                            Log.w(TAG, "out-of-target [HARD]: $fg → relaunch $targetPackage")
+                            replayer.relaunchApp(targetPackage)
+                            delay(1500L)
+                        } else {
+                            // 시스템 dialog / 다른 앱 → BACK 으로 돌아가기 우선
+                            Log.w(TAG, "out-of-target [SOFT]: $fg → try BACK x3")
+                            var recovered = false
+                            for (i in 1..3) {
+                                replayer.pressBack(1)
+                                delay(500L)
+                                val again = collector.collect(service)
+                                if (again.foregroundPackage == targetPackage) {
+                                    Log.i(TAG, "recovered to target after BACK x$i")
+                                    recovered = true
+                                    break
+                                }
+                            }
+                            if (!recovered) {
+                                Log.w(TAG, "BACK 실패 → relaunch fallback")
+                                replayer.relaunchApp(targetPackage)
+                                delay(1500L)
+                            }
+                        }
                         continue
                     }
 
@@ -183,9 +219,28 @@ class ExplorerEngine(
                     // 5. frontier 확인
                     val nextAction = stateGraph.popNextAction(fp.strict)
                     if (nextAction == null) {
-                        // 모든 액션 소진 — backtrack
-                        Log.d(TAG, "frontier=0 for ${fp.strict.take(8)} — pressing BACK")
+                        // 모든 액션 소진. 전체 그래프에서도 frontier 0 이면 완전탐색 종료
+                        val anyFrontier = stateGraph.snapshot().any { it.pendingCount > 0 }
+                        if (!anyFrontier) {
+                            fullyExploredChecks++
+                            if (fullyExploredChecks >= FULLY_EXPLORED_CONFIRM) {
+                                Log.i(
+                                    TAG,
+                                    "FULLY EXPLORED — 모든 노드의 frontier=0 ($fullyExploredChecks 회 연속 확인). 종료.",
+                                )
+                                break
+                            } else {
+                                Log.d(TAG, "fully-explored check $fullyExploredChecks/$FULLY_EXPLORED_CONFIRM")
+                            }
+                        } else {
+                            fullyExploredChecks = 0
+                        }
+                        // 모든 액션 소진 — 신중한 backtrack
+                        // 너무 깊이까지 BACK 하지 않게 — Notes root 에서 BACK 하면 launcher 로 빠짐
+                        Log.d(TAG, "frontier=0 for ${fp.strict.take(8)} — pressing BACK (cautious)")
                         replayer.pressBack(1)
+                        delay(500L)
+                        // BACK 후 launcher 로 빠졌는지 즉시 검사 → 빠졌으면 다음 iteration 의 §2 가 relaunch
                         noProgressCount++
                         if (noProgressCount > MAX_NO_PROGRESS) {
                             Log.w(TAG, "no progress $noProgressCount → home + relaunch")
@@ -311,5 +366,11 @@ class ExplorerEngine(
 
         /** 한 run 당 저장할 최대 스크린샷 수. sdcard 압박 + 회수 시간 방지. */
         private const val MAX_SCREENSHOTS = 50
+
+        /**
+         * "전체 frontier=0" 을 N 회 연속 확인하면 완전탐색 종료.
+         * 일시적 frontier 비움 (BACK 직후 등) 에 속지 않기 위한 안전 마진.
+         */
+        private const val FULLY_EXPLORED_CONFIRM = 3
     }
 }

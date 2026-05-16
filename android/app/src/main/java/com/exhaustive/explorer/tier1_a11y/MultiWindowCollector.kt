@@ -62,7 +62,16 @@ class MultiWindowCollector {
             val bounds = Rect().also { win.getBoundsInScreen(it) }
             val type = win.type
 
-            val candidates = NodeTraversal.walk(root, win.id)
+            // 후보 추출은 application + IME window 만.
+            // system_ui (navigation bar / status bar) 의 Home/Back/Recents 버튼이
+            // 후보로 잡혀서 DFS 가 누르는 사고 방지.
+            // window 정보 자체는 모든 window 수집 (fingerprint / popup 감지용).
+            val candidates = when (type) {
+                AccessibilityWindowInfo.TYPE_APPLICATION,
+                AccessibilityWindowInfo.TYPE_INPUT_METHOD,
+                -> NodeTraversal.walk(root, win.id)
+                else -> emptyList()
+            }
             allCandidates += candidates
 
             windowInfos += WindowInfo(
