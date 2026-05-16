@@ -42,23 +42,21 @@ android-ui-exhaustive-explorer/
 
 ---
 
-## 빠른 시작
+## 빠른 시작 (더블클릭만 하면 됨)
 
+```
+1. setup.bat  더블클릭   ← 최초 1회 (conda env + pip + npm)
+2. dev.bat    더블클릭   ← 이후 매번 (server + web + adb reverse)
+3. 브라우저: http://localhost:5173
+```
+
+Android APK 는 Android Studio 에서 `android/` 폴더 열고 Run.
+
+PowerShell 직접 사용하려면:
 ```powershell
-# 사전: server 의존성, web 의존성 한 번만 설치
-cd server; python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e ".[dev]"; deactivate; cd ..
-cd web;    npm install; cd ..
-
-# 서버 + 웹 + adb reverse 한 번에 (각각 새 창)
-.\scripts\dev.ps1
-# → server  http://127.0.0.1:8000  (`/api/health` 동작)
-# → web     http://localhost:5173   (헬스 badge 표시)
-
-# Android APK — Android Studio 에서 android/ 폴더 열고 Run
-# (CLI 빌드 원하면 한 번 sync 후)
-cd android
-.\gradlew :app:assembleDebug
-adb install -r app\build\outputs\apk\debug\app-debug.apk
+.\scripts\dev.ps1                       # default conda env "explorer"
+.\scripts\dev.ps1 -CondaEnv none        # system Python
+.\scripts\dev.ps1 -BindHost 10.10.5.20  # LAN 모드
 ```
 
 자세한 셋업·환경 변수: [`scripts/README.md`](scripts/README.md), [`android/README.md`](android/README.md), [`server/README.md`](server/README.md), [`web/README.md`](web/README.md).

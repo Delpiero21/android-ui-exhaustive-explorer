@@ -33,8 +33,8 @@ def create_app() -> FastAPI:
         title="android-ui-exhaustive-explorer · server",
         version=__version__,
         description=(
-            "Phase 0 — Bootstrap. /health 외에는 stub. "
-            "실제 라우터는 Phase 1 부터 채워짐."
+            "Phase 1 — Autonomous DFS. /api/runs, /api/phase, /api/health 동작. "
+            "/api/coverage 는 Phase 2 stub."
         ),
     )
 

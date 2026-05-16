@@ -20,4 +20,4 @@ class HealthResponse(BaseModel):
 
 @router.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
-    return HealthResponse(status="ok", version=__version__, phase="0-bootstrap")
+    return HealthResponse(status="ok", version=__version__, phase="1-autonomous")

@@ -8,12 +8,15 @@ Phase 1 (Dashboard batch) 구현:
 
 from __future__ import annotations
 
+import io
 import json
+import shutil
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -108,6 +111,60 @@ async def get_run_detail(run_id: str) -> dict[str, Any]:
         "summary": summary,
         "events": events,
         "screens": screens,
+    }
+
+
+@router.post("/runs/upload")
+async def upload_run(request: Request, run_id: str) -> dict[str, Any]:
+    """단말의 RunRecorder 가 zip 으로 묶어 보낸 run 데이터를 받아 풀어 저장.
+
+    단말 RunUploader 가 호출:
+      POST /api/runs/upload?run_id=XXX
+      Content-Type: application/zip
+      Body: zip stream containing events.jsonl, summary.json, screens/*.png
+
+    zip 안에는 top-level dir ({run_id}/) 가 있고 그 아래 파일들이 있음.
+    server/data/runs/{run_id}/ 로 풀어서 저장.
+    """
+    # run_id sanity check
+    if not run_id or "/" in run_id or "\\" in run_id or ".." in run_id:
+        raise HTTPException(400, detail="invalid run_id")
+
+    body = await request.body()
+    if not body:
+        raise HTTPException(400, detail="empty body")
+
+    target_dir = _runs_dir() / run_id
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    extracted = 0
+    try:
+        with zipfile.ZipFile(io.BytesIO(body), "r") as zf:
+            for member in zf.namelist():
+                if member.endswith("/"):
+                    continue
+                # zip 안 경로의 첫 segment (top-level dir) 제거
+                parts = member.split("/", 1)
+                inner = parts[1] if len(parts) == 2 else parts[0]
+                if not inner:
+                    continue
+                # path traversal 방지
+                if ".." in inner.split("/"):
+                    continue
+                dest = target_dir / inner
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(member) as src, open(dest, "wb") as out:
+                    shutil.copyfileobj(src, out)
+                extracted += 1
+    except zipfile.BadZipFile as e:
+        # 부분 풀린 결과 정리
+        raise HTTPException(400, detail=f"bad zip: {e}") from e
+
+    return {
+        "ok": True,
+        "run_id": run_id,
+        "extracted_files": extracted,
+        "target_dir": str(target_dir),
     }
 
 

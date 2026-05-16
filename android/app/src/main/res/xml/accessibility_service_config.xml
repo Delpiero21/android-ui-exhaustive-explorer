@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  AccessibilityService 가 필요로 하는 capability 모음.
+
+  Android 11+ 의 명시적 capability 선언 — 빠뜨리면 런타임 SecurityException.
+
+  사용 capability:
+    canRetrieveWindowContent — a11y tree 읽기 (Tier 1)
+    canPerformGestures        — dispatchGesture (tap / swipe / longpress)
+    canTakeScreenshot         — Tier 2/3/4/5 의 입력 source (Bitmap 캡처)
+    canRequestEnhancedWebAccessibility — WebView 내부 접근 (향후 Phase 3)
+-->
 <accessibility-service
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeAllMask"
@@ -6,5 +17,6 @@
     android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds|flagRequestEnhancedWebAccessibility|flagRequestTouchExplorationMode"
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="true"
+    android:canTakeScreenshot="true"
     android:description="@string/accessibility_service_description"
     android:notificationTimeout="100" />

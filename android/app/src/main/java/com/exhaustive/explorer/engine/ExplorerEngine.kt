@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.util.Log
 import com.exhaustive.explorer.core.Candidate
 import com.exhaustive.explorer.core.RunRecorder
+import com.exhaustive.explorer.core.RunUploader
 import com.exhaustive.explorer.core.ScreenCapture
 import com.exhaustive.explorer.core.ScreenFingerprint
 import com.exhaustive.explorer.core.ScreenInfo
@@ -62,6 +63,9 @@ class ExplorerEngine(
     // run recorder (autonomous mode 동안만 active)
     private var recorder: RunRecorder? = null
     val currentRunId: String? get() = recorder?.id
+
+    // run 종료 시 PC server 로 자동 업로드 (127.0.0.1:8000 via adb reverse)
+    private val uploader = RunUploader()
 
     // ────────── passive mode ──────────
 
@@ -230,8 +234,21 @@ class ExplorerEngine(
                     "autonomous end — screens=$screensExplored actions=$actionsExecuted " +
                         "nodes=${stateGraph.nodeCount} edges=${stateGraph.edgeCount}",
                 )
-                recorder?.recordRunEnd()
+                val rec = recorder
+                rec?.recordRunEnd()
                 recorder = null
+
+                // ⭐ PC server 로 자동 업로드 (127.0.0.1:8000 via adb reverse)
+                if (rec != null) {
+                    Log.i(TAG, "auto-uploading run to PC server...")
+                    val ok = uploader.uploadRun(rec.outputDir)
+                    if (ok) {
+                        Log.i(TAG, "auto-upload SUCCESS — Dashboard Runs 탭에 자동 노출")
+                    } else {
+                        Log.w(TAG, "auto-upload FAILED — server 안 떴거나 adb reverse 미설정. " +
+                            "수동 회수: .\\scripts\\pull_runs.ps1")
+                    }
+                }
             }
         }
     }

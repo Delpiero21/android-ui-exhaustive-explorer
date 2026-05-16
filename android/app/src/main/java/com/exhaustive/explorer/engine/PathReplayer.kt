@@ -1,7 +1,7 @@
 package com.exhaustive.explorer.engine
 
 import android.accessibilityservice.AccessibilityService
-import android.content.ComponentName
+import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
 import com.exhaustive.explorer.core.Candidate
@@ -54,15 +54,52 @@ class PathReplayer(
      */
     fun relaunchApp(packageName: String): Boolean {
         val pm = service.packageManager
-        val intent = pm.getLaunchIntentForPackage(packageName) ?: run {
-            Log.w(TAG, "no launch intent for $packageName")
+        val intent = pm.getLaunchIntentForPackage(packageName)
+        if (intent == null) {
+            Log.w(TAG, "no launch intent for $packageName — package not installed?")
             return false
         }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return runCatching {
+        intent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        )
+        Log.i(TAG, "relaunchApp $packageName → intent=$intent component=${intent.component}")
+
+        // Try 1: service.startActivity — 일반 경로
+        try {
             service.startActivity(intent)
-            true
-        }.getOrDefault(false)
+            Log.i(TAG, "relaunchApp: service.startActivity OK")
+            return true
+        } catch (t: Throwable) {
+            Log.w(TAG, "relaunchApp: service.startActivity 실패 — ${t.javaClass.simpleName} ${t.message}")
+        }
+
+        // Try 2: applicationContext — 가끔 context 차이로 동작
+        try {
+            service.applicationContext.startActivity(intent)
+            Log.i(TAG, "relaunchApp: applicationContext.startActivity OK")
+            return true
+        } catch (t: Throwable) {
+            Log.w(TAG, "relaunchApp: applicationContext 실패 — ${t.javaClass.simpleName} ${t.message}")
+        }
+
+        // Try 3: PendingIntent — BAL 제한 다른 룰
+        try {
+            val pi = PendingIntent.getActivity(
+                service.applicationContext,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            pi.send()
+            Log.i(TAG, "relaunchApp: PendingIntent.send OK")
+            return true
+        } catch (t: Throwable) {
+            Log.e(TAG, "relaunchApp: PendingIntent 도 실패 — ${t.javaClass.simpleName} ${t.message}", t)
+        }
+
+        return false
     }
 
     /**
