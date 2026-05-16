@@ -45,9 +45,13 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 
+# PowerShell 종류 감지 — pwsh (7+) 우선, 없으면 windows powershell 5.x
+$shellExe = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } else { "powershell" }
+
 Write-Host ""
 Write-Host "android-ui-exhaustive-explorer · dev launcher" -ForegroundColor Cyan
 Write-Host "root      : $root" -ForegroundColor DarkGray
+Write-Host "shell     : $shellExe" -ForegroundColor DarkGray
 $useConda = $CondaEnv -and $CondaEnv -ne "none"
 if ($useConda) {
     Write-Host "conda env : $CondaEnv" -ForegroundColor DarkGray
@@ -106,7 +110,7 @@ if ($useConda) {
     $serverCmd = "$envSetters; cd '$serverDir'; explorer-server"
 }
 
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", $serverCmd | Out-Null
+Start-Process $shellExe -ArgumentList "-NoExit", "-Command", $serverCmd | Out-Null
 Write-Host "      started in new window — http://$($serverEnv['EXPLORER_HOST']):8000" -ForegroundColor Green
 
 # ----- 3. web -----
@@ -122,7 +126,7 @@ if ($BindHost) {
 $webEnvSetters = ($webEnv.GetEnumerator() | ForEach-Object { "`$env:$($_.Key)='$($_.Value)'" }) -join "; "
 $webCmd = if ($webEnvSetters) { "$webEnvSetters; cd '$webDir'; npm run dev" } else { "cd '$webDir'; npm run dev" }
 
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", $webCmd | Out-Null
+Start-Process $shellExe -ArgumentList "-NoExit", "-Command", $webCmd | Out-Null
 Write-Host "      started in new window — http://localhost:5173" -ForegroundColor Green
 
 Write-Host ""
