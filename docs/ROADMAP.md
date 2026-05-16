@@ -40,12 +40,13 @@
 | 1-3 | `core/StateGraph` | 노드 추가 + outgoing edges + thread-safe RW lock | ✅ |
 | 1-4 | `engine/ExplorerEngine` DFS 루프 (skeleton) | 화면 변화 시 fingerprint 계산 + StateGraph 누적 (passive observation) | 🟢 skeleton |
 | 1-10a | `service/ExplorerAccessibilityService` engine 연결 | a11y 이벤트 → ExplorerEngine.onEvent | ✅ |
-| 1-5 | `engine/PathReplayer` Home + relaunch + replay | 백트랙 실패 시 ≥ 80% 재진입 성공 | ⏳ |
-| 1-6 | `guard/DialogDismisser` 한글 NFC 정규화 | Notes 권한 다이얼로그 자동 해소 | ⏳ |
-| 1-7 | `guard/DangerousActionGuard` 블랙리스트 | "전체 삭제·결제" 키워드 차단 | ⏳ |
-| 1-8 | `tier4_probe/DifferentialProbe` | 후보 → HOT/COLD 분류, false positive ≤ 20% | ⏳ |
-| 1-9 | `input/GestureDispatcher` + `input/TextInputSampler` | tap, longpress, swipe, SET_TEXT 모두 동작 | ⏳ |
-| 1-10b | `service/` ↔ engine 양방향 (액션 수행) | 자율 탐색 모드 활성화 | ⏳ |
+| 1-5 | `engine/PathReplayer` Home + relaunch + replay | 백트랙 실패 시 ≥ 80% 재진입 성공 | ✅ |
+| 1-6 | `guard/DialogDismisser` 한글 NFC 정규화 | Notes 권한 다이얼로그 자동 해소 | ✅ |
+| 1-7 | `guard/DangerousActionGuard` 블랙리스트 | "전체 삭제·결제" 키워드 차단 | ✅ |
+| 1-8 | `tier4_probe/DifferentialProbe` | 후보 → HOT/COLD 분류, false positive ≤ 20% | ✅ |
+| 1-9 | `input/GestureDispatcher` + `input/TextInputSampler` | tap, longpress, swipe, SET_TEXT 모두 동작 | ✅ |
+| 1-10b | `service/` ↔ engine 양방향 (액션 수행) + MainActivity 토글 | 자율 탐색 모드 활성화 | ✅ |
+| 1-11 | `core/ScreenCapture` (a11y takeScreenshot) | Tier 2/3/4/5 의 입력 source | ✅ |
 
 > 1-0 은 [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) 의 메타 발견으로 **Phase 1 최우선 항목**으로 격상됨.
 > 단일 dump 로는 어떤 popup 이 잡히고 어떤 popup 이 누락되는지 예측 불가능.
