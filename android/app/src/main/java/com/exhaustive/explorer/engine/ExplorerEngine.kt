@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.os.SystemClock
 import android.util.Log
 import com.exhaustive.explorer.core.Candidate
+import com.exhaustive.explorer.core.RunRecorder
 import com.exhaustive.explorer.core.ScreenCapture
 import com.exhaustive.explorer.core.ScreenFingerprint
 import com.exhaustive.explorer.core.ScreenInfo
@@ -58,6 +59,10 @@ class ExplorerEngine(
     private var autonomousJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    // run recorder (autonomous mode 동안만 active)
+    private var recorder: RunRecorder? = null
+    val currentRunId: String? get() = recorder?.id
+
     // ────────── passive mode ──────────
 
     /**
@@ -109,6 +114,12 @@ class ExplorerEngine(
         val gesture = GestureDispatcher(service)
         val replayer = PathReplayer(service, gesture)
 
+        // RunRecorder 생성 — /sdcard/Android/data/com.exhaustive.explorer.debug/files/runs/{id}/
+        recorder = RunRecorder(service).also { rec ->
+            rec.recordRunStart(targetPackage, budgetMs)
+            Log.i(TAG, "RunRecorder created: ${rec.outputDir.absolutePath}")
+        }
+
         autonomousJob = scope.launch {
             val deadline = SystemClock.uptimeMillis() + budgetMs
             Log.i(TAG, "autonomous start — pkg=$targetPackage budget=${budgetMs}ms")
@@ -139,6 +150,7 @@ class ExplorerEngine(
                     val evacuate = guard.shouldEvacuateScreen(texts)
                     if (evacuate.isEvacuate) {
                         Log.w(TAG, "EVACUATE: ${evacuate.reason} — pressing HOME")
+                        recorder?.recordEvacuate(evacuate.reason ?: "?")
                         replayer.goHome()
                         if (targetPackage != null) replayer.relaunchApp(targetPackage)
                         delay(2000L)
@@ -155,6 +167,7 @@ class ExplorerEngine(
                             TAG,
                             "[NEW#$screensExplored] fp=${fp.strict.take(8)} candidates=${node.candidateCount}",
                         )
+                        recorder?.recordNewScreen(fp, screen)
                     }
 
                     // 5. frontier 확인
@@ -176,6 +189,10 @@ class ExplorerEngine(
 
                     // 6. 위험 액션 차단
                     if (!guard.isSafe(nextAction)) {
+                        recorder?.recordBlock(
+                            reason = "dangerous_keyword",
+                            label = nextAction.shortLabel(),
+                        )
                         continue  // 다음 액션으로
                     }
 
@@ -184,6 +201,7 @@ class ExplorerEngine(
 
                     // 8. action 수행
                     actionsExecuted++
+                    recorder?.recordAction(nextAction, fp.strict)
                     val ok = gesture.perform(nextAction, nextAction.actions.first())
                     if (!ok) {
                         Log.d(TAG, "action failed: ${nextAction.shortLabel()}")
@@ -194,9 +212,11 @@ class ExplorerEngine(
                     delay(700L)
                     val newScreen = collector.collect(service)
                     val newFp = ScreenFingerprint.composite(newScreen)
+                    val changed = newFp.strict != fp.strict
                     stateGraph.addEdge(fp.strict, nextAction, newFp.strict)
+                    recorder?.recordEdge(fp.strict, newFp.strict, nextAction, changed)
 
-                    if (newFp.strict != fp.strict) noProgressCount = 0
+                    if (changed) noProgressCount = 0
                 }
             } finally {
                 Log.i(
@@ -204,6 +224,8 @@ class ExplorerEngine(
                     "autonomous end — screens=$screensExplored actions=$actionsExecuted " +
                         "nodes=${stateGraph.nodeCount} edges=${stateGraph.edgeCount}",
                 )
+                recorder?.recordRunEnd()
+                recorder = null
             }
         }
     }

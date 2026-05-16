@@ -358,7 +358,7 @@ ExplorerEngine.snapshot() → JSON → HTTP POST /api/runs/{id}/snapshot
 
 ---
 
-## 본 문서 갱신 정책 (mandate)
+## 본 문서 갱신 정책 (mandate v3)
 
 | 시점 | 누가 | 무엇을 |
 |---|---|---|
@@ -367,6 +367,40 @@ ExplorerEngine.snapshot() → JSON → HTTP POST /api/runs/{id}/snapshot
 | Phase 종료 시 | 리드 | §0 종합 비교의 해당 컬럼을 ✅ + 실측값 채움. 다음 Phase 초안 시작 |
 | 예상 못한 한계 발견 시 | 누구든 | 즉시 §3 실패에 추가 + 사유 + 다음 단계 명시 |
 | 정량 측정 완료 시 | 개발자 | §4 커버리지의 TBD → 실측값 |
+| **모든 위 시점** | **갱신한 사람** | **`data/phase_log.json` 도 동시에 갱신** — web Dashboard 의 source. 한 쪽만 갱신 금지 |
 
 → **본 문서가 "지금 본 도구로 무엇이 되고 안 되는가" 의 단일 진실 (single source of truth).**
    외부 (팀장 보고 / 신규 합류자 / 차기 분기 계획 / 시연 Q&A) 질문 시 본 문서 한 개로 답.
+
+→ **MD ↔ JSON 동시 운영**:
+   - `docs/PHASE_LOG.md` = 사람 읽기 + 보고용
+   - `data/phase_log.json` = web Dashboard (`/api/phase`) source
+   - 두 파일 sync 깨지면 안 됨 (mandate).
+
+### 회수 + Dashboard 흐름
+
+```
+[단말]                            [PC]                     [Web]
+ExplorerEngine                    server/data/runs/       http://localhost:5173
+   │                                    ▲                       │
+   ├→ RunRecorder                       │                       │
+   │   /sdcard/.../runs/{id}/           │                       │
+   │   ├ events.jsonl                   │                       │
+   │   ├ summary.json                   │                       │
+   │   └ screens/*.png                  │                       │
+   │                                    │                       │
+   └→ scripts/pull_runs.ps1 ─ adb pull ─┘                       │
+                                                                 │
+                       FastAPI /api/runs  ←── 자동 스캔 ──────────┤ Runs 탭
+                       FastAPI /api/phase ←── data/phase_log.json ─┤ Phase 탭
+                                                                 │
+                                                                 ▼ 사용자
+```
+
+### 시연 시 보여줄 것
+
+1. 단말에서 자율 탐색 실행 (logcat live)
+2. 끝나면 `adb pull` → `scripts/pull_runs.ps1` 한 줄
+3. 브라우저 새로고침 → Runs 탭 에 신규 run 노출
+4. Run 카드 클릭 → 통계 + 이벤트 분포 + 발견 화면 시계열
+5. Phase 탭 → 본 문서 §0 의 시각화 (한눈에 진화)

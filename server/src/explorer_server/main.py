@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from explorer_server import __version__
-from explorer_server.routers import coverage, health, runs
+from explorer_server.routers import coverage, health, phase, runs
 
 logger = logging.getLogger("explorer_server")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(runs.router)
     app.include_router(coverage.router)
+    app.include_router(phase.router)
 
     @app.get("/")
     async def root() -> dict[str, str]:
