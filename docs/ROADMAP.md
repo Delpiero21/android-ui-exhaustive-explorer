@@ -31,19 +31,21 @@
 > Tier 1 (a11y) + Tier 4 (Differential Probe) + 기본 DFS 엔진.
 > 표준 UI 만 탐색해도 동작은 한다.
 
-| # | 산출물 | 완료 기준 |
-|---|---|---|
-| 1-1 | `tier1_a11y/NodeTraversal` | a11y tree 노드 → Candidate 리스트 |
-| 1-2 | `core/ScreenFingerprint` 두 단계 해시 (strict + loose) | 같은 화면 재방문 시 fp_strict 일치율 ≥ 95% |
-| 1-3 | `core/StateGraph` | 노드 추가 + outgoing edges + 직렬화 |
-| 1-4 | `engine/ExplorerEngine` DFS 루프 | Samsung Notes 메인 화면에서 5개 이상 노드 발견 |
-| 1-5 | `engine/PathReplayer` Home + relaunch + replay | 백트랙 실패 시 ≥ 80% 재진입 성공 |
-| 1-6 | `guard/DialogDismisser` 한글 NFC 정규화 | Notes 권한 다이얼로그 자동 해소 |
-| 1-7 | `guard/DangerousActionGuard` 블랙리스트 | "전체 삭제·결제" 키워드 차단 |
-| 1-8 | `tier4_probe/DifferentialProbe` | 후보 → HOT/COLD 분류, false positive ≤ 20% |
-| 1-9 | `input/GestureDispatcher` + `input/TextInputSampler` | tap, longpress, swipe, SET_TEXT 모두 동작 |
-| 1-10 | `service/ExplorerAccessibilityService` 진입점 | UI 토글로 탐색 시작/종료 |
-| **1-0** | **⭐ `tier1_a11y/MultiWindowCollector` — `AccessibilityService.getWindows()` 반복** | **`uiautomator dump` 의존 제거, popup·IME 통합 dump (Case 1·6·10 해결)** |
+| # | 산출물 | 완료 기준 | 상태 |
+|---|---|---|---|
+| 1-A | **`core/` 공통 데이터 클래스** (Candidate, NodeRef, ScreenInfo, WindowInfo, CandidateAction, CandidateSource) | 모든 Tier 가 공유하는 데이터 모양 정의 | ✅ |
+| **1-0** | **⭐ `tier1_a11y/MultiWindowCollector` — `AccessibilityService.getWindows()` 반복** | **`uiautomator dump` 의존 제거, popup·IME 통합 dump (Case 1·6·10 해결)** | ✅ |
+| 1-1 | `tier1_a11y/NodeTraversal` | a11y tree 노드 → Candidate 리스트 | ✅ |
+| 1-2 | `core/ScreenFingerprint` 두 단계 해시 (strict + loose) | 같은 화면 재방문 시 fp_strict 일치율 ≥ 95% | ✅ |
+| 1-3 | `core/StateGraph` | 노드 추가 + outgoing edges + thread-safe RW lock | ✅ |
+| 1-4 | `engine/ExplorerEngine` DFS 루프 (skeleton) | 화면 변화 시 fingerprint 계산 + StateGraph 누적 (passive observation) | 🟢 skeleton |
+| 1-10a | `service/ExplorerAccessibilityService` engine 연결 | a11y 이벤트 → ExplorerEngine.onEvent | ✅ |
+| 1-5 | `engine/PathReplayer` Home + relaunch + replay | 백트랙 실패 시 ≥ 80% 재진입 성공 | ⏳ |
+| 1-6 | `guard/DialogDismisser` 한글 NFC 정규화 | Notes 권한 다이얼로그 자동 해소 | ⏳ |
+| 1-7 | `guard/DangerousActionGuard` 블랙리스트 | "전체 삭제·결제" 키워드 차단 | ⏳ |
+| 1-8 | `tier4_probe/DifferentialProbe` | 후보 → HOT/COLD 분류, false positive ≤ 20% | ⏳ |
+| 1-9 | `input/GestureDispatcher` + `input/TextInputSampler` | tap, longpress, swipe, SET_TEXT 모두 동작 | ⏳ |
+| 1-10b | `service/` ↔ engine 양방향 (액션 수행) | 자율 탐색 모드 활성화 | ⏳ |
 
 > 1-0 은 [`SAMSUNG_NOTES_HARD_CASES.md`](SAMSUNG_NOTES_HARD_CASES.md) 의 메타 발견으로 **Phase 1 최우선 항목**으로 격상됨.
 > 단일 dump 로는 어떤 popup 이 잡히고 어떤 popup 이 누락되는지 예측 불가능.
