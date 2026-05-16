@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AWS Console navy — 본 도구의 브랜드 컬러 -->
+    <color name="ic_launcher_background">#232F3E</color>
+    <color name="brand_accent">#EC7211</color>
+</resources>

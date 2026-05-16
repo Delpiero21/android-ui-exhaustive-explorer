@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  본 도구의 런처 아이콘 foreground.
+  적응형 아이콘 (Adaptive Icon) safe-zone 안에 "EX" 모노그램 배치.
+  108x108 viewport 중 66x66 의 safe-zone (offset 21).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- "EX" 모노그램 — 오렌지(#EC7211) 두꺼운 글씨 -->
+    <group android:translateX="22" android:translateY="34">
+        <!-- 글자 'E' -->
+        <path
+            android:fillColor="#EC7211"
+            android:pathData="M0,0 L24,0 L24,7 L8,7 L8,17 L22,17 L22,24 L8,24 L8,34 L24,34 L24,41 L0,41 Z" />
+        <!-- 글자 'X' -->
+        <path
+            android:fillColor="#EC7211"
+            android:pathData="M32,0 L40,0 L48,15 L56,0 L64,0 L52,20 L64,41 L56,41 L48,25 L40,41 L32,41 L44,20 Z" />
+    </group>
+</vector>
