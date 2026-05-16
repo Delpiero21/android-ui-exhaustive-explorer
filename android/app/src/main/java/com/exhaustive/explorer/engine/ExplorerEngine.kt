@@ -138,6 +138,12 @@ class ExplorerEngine(
             var noProgressCount = 0
             var fullyExploredChecks = 0
 
+            // ⭐ 무한 반복 가지치기:
+            // 같은 loose fp (구조만 동일) 가 N 회 연속 → 발산 의심 → 강제 BACK
+            // 키보드 50글자 toast / cursor blinking 등으로 strict fp 미세 변동해도 loose 는 같음
+            var sameLooseCount = 0
+            var prevLooseFp = ""
+
             try {
                 while (
                     isActive &&
@@ -214,6 +220,30 @@ class ExplorerEngine(
                             recorder?.saveScreenshot(fp.strict, bitmap)
                             bitmap?.recycle()
                         }
+                    }
+
+                    // 4.5. ⭐ 무한 반복 가지치기 (loose fp 기준)
+                    //   같은 loose fp 가 N 회 연속 = 같은 구조의 화면에서 미세 변동만 → 발산 의심
+                    //   예: SIP 키보드에서 키 누르며 text 변경 (strict fp 매번 다름, loose 동일)
+                    //   → 현재 fp 의 남은 액션 가지치기 + BACK
+                    if (fp.loose == prevLooseFp) {
+                        sameLooseCount++
+                    } else {
+                        sameLooseCount = 0
+                        prevLooseFp = fp.loose
+                    }
+                    if (sameLooseCount > MAX_SAME_LOOSE_REPEATS) {
+                        val remaining = node.pendingActions.size
+                        Log.w(
+                            TAG,
+                            "STUCK (loose): 같은 구조 ${sameLooseCount}회 연속 (loose=${fp.loose.take(8)}) " +
+                                "— 남은 액션 ${remaining}개 가지치기 + BACK",
+                        )
+                        while (stateGraph.popNextAction(fp.strict) != null) {}
+                        replayer.pressBack(1)
+                        delay(700L)
+                        sameLooseCount = 0
+                        continue
                     }
 
                     // 5. frontier 확인
@@ -372,5 +402,16 @@ class ExplorerEngine(
          * 일시적 frontier 비움 (BACK 직후 등) 에 속지 않기 위한 안전 마진.
          */
         private const val FULLY_EXPLORED_CONFIRM = 3
+
+        /**
+         * 같은 loose fp (구조만 동일) 가 연속 N 회 → 발산 의심 → 가지치기.
+         *
+         * 키보드 시나리오:
+         *   text 변경마다 strict fp 다르지만 (cursor / toast / counter 변동) loose 는 같음
+         *   = 의미 있는 새 화면 발견 없이 같은 구조 반복 = 발산
+         *
+         * 25 회 정도면 키보드 키 약 1/3 시도 후 자동 탈출 — 충분히 sampling 도 하면서 발산도 방지.
+         */
+        private const val MAX_SAME_LOOSE_REPEATS = 25
     }
 }
